@@ -26,12 +26,10 @@ steps:
     deploymentOutputs: 'armOutputs' # Captures Bicep outputs
 
 # 2. Parse Bicep outputs into variables
-- powershell: |
-    $outputs = '$(armOutputs)' | ConvertFrom-Json
-    foreach ($key in $outputs.PSObject.Properties.Name) {
-        $val = $outputs.$key.value
-        Write-Host "##vso[task.setvariable variable=$key]$val"
-    }
+- bash: |
+    echo "Parsing Bicep outputs..."
+    # Loop through each key in the JSON object
+    echo '$(armOutputs)' | jq -r 'to_entries[] | "##vso[task.setvariable variable=" + .key + "]" + (.value.value | tostring)'
   displayName: 'Parse Bicep Outputs'
 
 # 3. Print success message
