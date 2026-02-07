@@ -10,11 +10,9 @@ variables:
   location: 'eastus'
 
 steps:
-# 1. Provision the resources using your Bicep file
+# 1. Provision the resources
 - task: AzureResourceManagerTemplateDeployment@3
-  # Added name so we can reference its outputs
-  # ***What is DeployResources?
-  name: DeployResources 
+  name: DeployResources
   displayName: 'Provision Resources'
   inputs:
     deploymentScope: 'Resource Group'
@@ -25,35 +23,40 @@ steps:
     templateLocation: 'Linked artifact'
     csmFile: 'infra/main.bicep'
     deploymentMode: 'Incremental'
-    deploymentOutputs: 'armOutputs'
+    deploymentOutputs: 'armOutputs' # Captures Bicep outputs
 
-# Print success message after provisioning
+# 2. Parse Bicep outputs into variables
+- powershell: |
+    $outputs = '$(armOutputs)' | ConvertFrom-Json
+    foreach ($key in $outputs.PSObject.Properties.Name) {
+        $val = $outputs.$key.value
+        Write-Host "##vso[task.setvariable variable=$key]$val"
+    }
+  displayName: 'Parse Bicep Outputs'
+
+# 3. Print success message
 - script: |
-    echo "Resource defined in infra/main.bicep have been successfully provisioned in $(resourceGroupName)"
-    echo "OpenAI Endpoint: $(DeployResources.openAiEndpoint)"
+    echo "Resources successfully provisioned in $(resourceGroupName)"
+    echo "OpenAI Endpoint: $(openAiEndpoint)" 
   displayName: 'Print Provisioning Success'
 
-# 3. Delete the specific Search Service resource
+# 4. Delete the Search Service
 - task: AzureCLI@2
   displayName: 'Delete Search Service for Cost Control'
-  # Ensures cleanup runs even if provisioning or script steps fail
   condition: always()
   inputs:
     azureSubscription: $(serviceConnectionName)
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
     inlineScript: |
-      # Extract the search name from the full endpoint URL provided in Bicep output
-      SEARCH_ENDPOINT="$(DeployResources.searchEndpoint)"
-      SEARCH_NAME=$(echo $SEARCH_ENDPOINT | sed -e 's/https:\/\///' -e 's/.search.windows.net//')
+      ENDPOINT="$(searchEndpoint)"
+      NAME=$(echo $ENDPOINT | sed -e 's/https:\/\///' -e 's/.search.windows.net//')
+      echo "Targeting Search Service: $NAME for deletion..."
+      az search service delete --name "$NAME" --resource-group $(resourceGroupName)
+      echo "Search Service $NAME has been successfully deleted."
 
-      echo "Targeting Search Service: $SEARCH_NAME for deletion..."
-
-      az search service delete --name $SEARCH_NAME --resource-group $(resourceGroupName)
-
-      echo "Search Service $SEARCH_NAME has been successfully deleted to minimize costs."
-    
+# 5. Final Status (FIXED INDENTATION)
 - script: |
-    echo "The pipeline has completed the ephemeral test cycle. The resource group $(resourceGroupName) remains, but the search service has been removed"
-    displayName: 'Print Final Status'
-    condition: always()
+    echo "The pipeline has completed the ephemeral test cycle."
+  displayName: 'Print Final Status'
+  condition: always()
