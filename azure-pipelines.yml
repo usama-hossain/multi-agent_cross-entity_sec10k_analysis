@@ -50,7 +50,7 @@ steps:
       ENDPOINT="$(searchEndpoint)"
       NAME=$(echo $ENDPOINT | sed -e 's/https:\/\///' -e 's/.search.windows.net//')
       echo "Targeting Search Service: $NAME for deletion..."
-      az search service delete --name "$NAME" --resource-group $(resourceGroupName)
+      az search service delete --name "$NAME" --resource-group $(resourceGroupName) --yes
       echo "Search Service $NAME has been successfully deleted."
 
 # 5. Final Status (FIXED INDENTATION)
