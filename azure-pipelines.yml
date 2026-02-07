@@ -25,11 +25,12 @@ steps:
     templateLocation: 'Linked artifact'
     csmFile: 'infra/main.bicep'
     deploymentMode: 'Incremental'
+    deploymentOutputs: 'armOutputs'
 
 # Print success message after provisioning
 - script: |
     echo "Resource defined in infra/main.bicep have been successfully provisioned in $(resourceGroupName)"
-    echo "OpenAI Endpoint: $(DeployResources.openAiEndpoint"
+    echo "OpenAI Endpoint: $(DeployResources.openAiEndpoint)"
   displayName: 'Print Provisioning Success'
 
 # 3. Delete the specific Search Service resource
