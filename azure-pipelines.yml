@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  name: 'CloudAgentPool'
+  vmImage: 'ubuntu-latest'
 
 variables:
   serviceConnectionName: 'UtilityProjectConnection'
