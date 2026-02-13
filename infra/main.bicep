@@ -39,7 +39,7 @@ resource projectIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-
 
 // 4. Create the 'Safe' (Key Vault) with RBAC Enabled
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
-  name: 'kv-utility-rag-${uniqueString(resourceGroup().id)}'
+  name: 'kv-utility-${uniqueString(resourceGroup().id)}'
   location: location
   properties: {
     sku: {family: 'A', name:'standard'}
