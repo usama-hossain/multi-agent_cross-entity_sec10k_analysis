@@ -50,7 +50,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
 }
 
 // 3. The 'Glue' (Role Assignment): Granting the identity access to the Vault
-resource kvRoleAssignment 'Microsoft.Authorization/roleAssignment@2022-04-01' = {
+resource kvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(keyVault.id, projectIdentity.id, 'Key Vault Secrets User')
   scope: keyVault
   properties: {
