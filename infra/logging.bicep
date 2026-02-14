@@ -1,4 +1,4 @@
-param worspaceId string
+param workspaceId string
 param resourceName string
 
 // This generic resource allows us to apply diagnostics to ANY resource type
