@@ -3,6 +3,12 @@ param location string = resourceGroup().location
 param openAiName string = 'openai-${uniqueString(resourceGroup().id)}'
 param searchName string = 'search-${uniqueString(resourceGroup().id)}'
 
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+  name: 'utilites-project-logAnalytics'
+  location: location
+  properties: { sku: { name: 'PerGB2018' } }
+}
+
 // 1. Azure OpenAI Service
 resource openAiAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   name: openAiName
@@ -61,6 +67,35 @@ resource kvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' =
   }
 }
 
+//Link OpenAI to Logging
+module openAiLogging './logging.bicep' = {
+  name: 'openai-diagnostics'
+  scope: openAiAccount // This tells Bicep which resource to monitor
+  params: {
+    workspaceId: logAnalytics.id
+    resourceName: openAiAccount.name
+  }
+}
+
+// Link Search to Logging
+module searchLogging './logging.bicep' = {
+  name: 'search-diagnostics'
+  scope: searchService
+  params: {
+    workspaceId: logAnalytics.id
+    resourceName: searchService.name
+  }
+}
+
+// Link Key Vault to Logging
+module kvLogging './logging.bicep' = {
+  name: 'kv-diag'
+  scope: keyVault
+  params: {
+    workspaceId: logAnalytics.id
+    resourceName: keyVault.name
+  }
+}
 
 output openAiEndpoint string = openAiAccount.properties.endpoint
 output searchEndpoint string = 'https://${searchName}.search.windows.net'
