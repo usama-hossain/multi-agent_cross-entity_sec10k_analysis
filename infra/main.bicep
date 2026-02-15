@@ -70,30 +70,30 @@ resource kvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' =
 //Link OpenAI to Logging
 module openAiLogging './logging.bicep' = {
   name: 'openai-diagnostics'
-  scope: openAiAccount // This tells Bicep which resource to monitor
   params: {
     workspaceId: logAnalytics.id
     resourceName: openAiAccount.name
+    resourceType: 'Microsoft.CognitiveServices/accounts'
   }
 }
 
 // Link Search to Logging
 module searchLogging './logging.bicep' = {
   name: 'search-diagnostics'
-  scope: searchService
   params: {
     workspaceId: logAnalytics.id
     resourceName: searchService.name
+    resourceType: 'Microsoft.Search/searchServices'
   }
 }
 
 // Link Key Vault to Logging
 module kvLogging './logging.bicep' = {
   name: 'kv-diag'
-  scope: keyVault
   params: {
     workspaceId: logAnalytics.id
     resourceName: keyVault.name
+    resourceType: 'Microsoft.KeyVault/vaults'
   }
 }
 
