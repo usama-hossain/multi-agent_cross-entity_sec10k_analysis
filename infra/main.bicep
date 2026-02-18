@@ -67,35 +67,37 @@ resource kvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' =
   }
 }
 
-//Link OpenAI to Logging
-module openAiLogging './logging.bicep' = {
-  name: 'openai-diagnostics'
-  scope: openAiAccount // This tells Bicep which resource to monitor
-  params: {
+// --- Diagnostics inline ---
+
+resource openAiDiag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: 'openAi-diag'
+  scope: openAiAccount
+  properties: {
     workspaceId: logAnalytics.id
-    resourceName: openAiAccount.name
+    logs: [ {categoryGroup: 'allLogs', enabled: true} ]
+    metrics: [ {category: 'AllMetrics', enabled: true} ]
   }
 }
 
-// Link Search to Logging
-module searchLogging './logging.bicep' = {
-  name: 'search-diagnostics'
+resource searchDiag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: '${searchName}-diag'
   scope: searchService
-  params: {
+  properties: {
     workspaceId: logAnalytics.id
-    resourceName: searchService.name
+    logs: [ { categoryGroup: 'allLogs', enabled: true } ]
+    metrics: [ { category: 'AllMetrics', enabled: true } ]
   }
 }
 
-// Link Key Vault to Logging
-module kvLogging './logging.bicep' = {
-  name: 'kv-diag'
+resource kvDiag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: '${keyVault.name}-diag'
   scope: keyVault
-  params: {
+  properties: {
     workspaceId: logAnalytics.id
-    resourceName: keyVault.name
+    logs: [ { categoryGroup: 'audit', enabled: true } ]
   }
 }
+
 
 output openAiEndpoint string = openAiAccount.properties.endpoint
 output searchEndpoint string = 'https://${searchName}.search.windows.net'
