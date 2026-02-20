@@ -128,3 +128,5 @@ resource kvDiag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
 output openAiEndpoint string = openAiAccount.properties.endpoint
 output searchEndpoint string = 'https://${searchName}.search.windows.net'
 output docIntelligenceEndpoint string = docIntelligence.properties.endpoint
+output keyVaultName string = keyVault.name
+output projectIdentityClientId string = projectIdentity.properties.clientId
