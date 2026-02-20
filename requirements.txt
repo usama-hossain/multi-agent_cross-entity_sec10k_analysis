@@ -1,0 +1,22 @@
+# Uncomment to enable Azure Monitor OpenTelemetry
+# Ref: aka.ms/functions-azure-monitor-python 
+# azure-monitor-opentelemetry 
+
+# --- Azure Functions Core ---
+azure-functions
+azure-identity
+
+# --- SEC Data Ingestion ---
+sec-edgar-downloader
+
+# --- Document Processing & Extraction ---
+azure-ai-documentintelligence>=1.0.0
+beautifulsoup4
+lxml
+
+# --- RAG & Chunking ---
+langchain-text-splitters
+openai
+
+# --- Utilities & Logging ---
+python-dotenv
