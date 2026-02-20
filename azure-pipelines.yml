@@ -58,15 +58,3 @@ steps:
     echo "The pipeline has completed the ephemeral test cycle."
   displayName: 'Print Final Status'
   condition: always()
-
-  # 6. Inject Environment Variables into the Function App
-- task: AzureFunctionAppSetting@1
-  displayName: 'Update Function App Settings'
-  inputs:
-    azureSubscription: $(serviceConnectionName)
-    appName: 'func-utility-$(resourceGroupName)' # Matches your Bicep naming
-    resourceGroupName: $(resourceGroupName)
-    appSettings: |
-      -DOC_INTEL_ENDPOINT "$(docIntelligenceEndpoint)"
-      -KEY_VAULT_URL "https://$(keyVaultName).vault.azure.net/"
-      -AZURE_CLIENT_ID "$(projectIdentityClientId)"
