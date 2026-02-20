@@ -60,17 +60,13 @@ steps:
   condition: always()
 
   # 6. Inject Environment Variables into the Function App
-- task: AzureCLI@2
+- task: AzureFunctionAppSetting@1
   displayName: 'Update Function App Settings'
   inputs:
     azureSubscription: $(serviceConnectionName)
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      az functionapp config appsettings set \
-        --name "func-utility-$(resourceGroupName)" \
-        --resource-group "$(resourceGroupName)" \
-        --settings \
-          DOC_INTEL_ENDPOINT="$(docIntelligenceEndpoint)" \
-          KEY_VAULT_URL="https://$(keyVaultName).vault.azure.net/" \
-          AZURE_CLIENT_ID="$(projectIdentityClientId)"
+    appName: 'func-utility-$(resourceGroupName)' # Matches your Bicep naming
+    resourceGroupName: $(resourceGroupName)
+    appSettings: |
+      -DOC_INTEL_ENDPOINT "$(docIntelligenceEndpoint)"
+      -KEY_VAULT_URL "https://$(keyVaultName).vault.azure.net/"
+      -AZURE_CLIENT_ID "$(projectIdentityClientId)"
