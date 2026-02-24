@@ -71,7 +71,7 @@ resource kvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' =
 param docIntelligenceName string = 'docint-${uniqueString(resourceGroup().id)}'
 
 // 6. Azure AI Document Intelligence Service
-resource docIntelligence 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
+resource docIntelligence 'Microsoft.CognitiveServices/accounts@2024-11-30' = {
   name: docIntelligenceName
   location: location
   kind: 'FormRecognizer' // This is the 'kind' for Document Intelligence
