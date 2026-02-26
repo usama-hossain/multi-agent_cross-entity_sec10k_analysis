@@ -6,13 +6,12 @@
 azure-functions
 azure-identity
 
-# --- SEC Data Ingestion ---
-sec-edgar-downloader
-
 # --- Document Processing & Extraction ---
+azure-storage-blob
 azure-ai-documentintelligence>=1.0.0
 beautifulsoup4
 lxml
+pdfkit
 
 # --- RAG & Chunking ---
 langchain-text-splitters
@@ -20,3 +19,4 @@ openai
 
 # --- Utilities & Logging ---
 python-dotenv
+requests
