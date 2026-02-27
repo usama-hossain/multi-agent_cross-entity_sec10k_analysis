@@ -1,4 +1,4 @@
-var myUserObjectId = '65295d8c-98be-491b-bc32-ebd721b531d7'
+var myUserObjectId = '7d89d7bb-1f79-4ed4-bf0a-e82c59a8f91b'
 
 // Parameters for flexibility across regions
 param location string = resourceGroup().location
