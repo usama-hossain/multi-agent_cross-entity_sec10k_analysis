@@ -14,6 +14,12 @@ param blobContainerName string = 'sec-filings'
 @description('Optional object ID for a future Function App managed identity that should also write blobs.')
 param futureFunctionPrincipalObjectId string = ''
 
+@description('Azure Function App name for SEC processing pipeline.')
+param functionAppName string = 'func-sec-${uniqueString(resourceGroup().id)}'
+
+@description('Hosting plan name for the Azure Function App.')
+param functionPlanName string = 'plan-sec-${uniqueString(resourceGroup().id)}'
+
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: 'utilites-project-logAnalytics'
   location: location
@@ -157,6 +163,115 @@ resource blobRoleAssignmentFunctionIdentity 'Microsoft.Authorization/roleAssignm
   }
 }
 
+resource functionPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
+  name: functionPlanName
+  location: location
+  kind: 'linux'
+  sku: {
+    tier: 'Dynamic'
+    name: 'Y1'
+  }
+  properties: {
+    reserved: true
+  }
+}
+
+resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
+  name: functionAppName
+  location: location
+  kind: 'functionapp,linux'
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    serverFarmId: functionPlan.id
+    httpsOnly: true
+    siteConfig: {
+      linuxFxVersion: 'Python|3.11'
+      appSettings: [
+        {
+          name: 'AzureWebJobsStorage'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
+        }
+        {
+          name: 'FUNCTIONS_WORKER_RUNTIME'
+          value: 'python'
+        }
+        {
+          name: 'FUNCTIONS_EXTENSION_VERSION'
+          value: '~4'
+        }
+        {
+          name: 'WEBSITE_RUN_FROM_PACKAGE'
+          value: '1'
+        }
+        {
+          name: 'BLOB_ACCOUNT_URL'
+          value: storageAccount.properties.primaryEndpoints.blob
+        }
+        {
+          name: 'BLOB_CONTAINER_NAME'
+          value: blobContainerName
+        }
+        {
+          name: 'SEC_COMPANY_NAME'
+          value: 'EnergyAI-Research'
+        }
+        {
+          name: 'SEC_EMAIL'
+          value: 'scarredentos@gmail.com'
+        }
+        {
+          name: 'SEC_HTML_QUEUE_NAME'
+          value: 'sec-html-jobs'
+        }
+        {
+          name: 'SEC_PDF_QUEUE_NAME'
+          value: 'sec-pdf-jobs'
+        }
+        {
+          name: 'DOC_INTEL_ENDPOINT'
+          value: docIntelligence.properties.endpoint
+        }
+        {
+          name: 'DOC_INTEL_KEY'
+          value: '@Microsoft.KeyVault(SecretUri=${docIntelligenceSecret.properties.secretUriWithVersion})'
+        }
+      ]
+    }
+  }
+}
+
+resource blobRoleAssignmentFunctionAppIdentity 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccount.id, functionApp.id, 'Storage Blob Data Contributor')
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+    principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource queueRoleAssignmentFunctionAppIdentity 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccount.id, functionApp.id, 'Storage Queue Data Contributor')
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '974c5e8b-45b9-4653-ba55-5f855dd0fb88')
+    principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource keyVaultSecretsRoleAssignmentFunctionAppIdentity 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, functionApp.id, 'Key Vault Secrets User')
+  scope: keyVault
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
+    principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // New parameter for document intelligence.
 param docIntelligenceName string = 'docint-${uniqueString(resourceGroup().id)}'
 
@@ -246,3 +361,4 @@ output docIntelligenceEndpoint string = docIntelligence.properties.endpoint
 output storageAccountNameOut string = storageAccount.name
 output blobAccountUrl string = storageAccount.properties.primaryEndpoints.blob
 output blobContainerNameOut string = secFilingsContainer.name
+output functionAppNameOut string = functionApp.name

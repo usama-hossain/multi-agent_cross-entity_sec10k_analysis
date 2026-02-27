@@ -37,25 +37,30 @@ steps:
     echo "Resources successfully provisioned in $(resourceGroupName)"
     echo "OpenAI Endpoint: $(openAiEndpoint)" 
     echo "docIntelligenceEndpoint: $(docIntelligenceEndpoint)"
+    echo "Function App: $(functionAppNameOut)"
   displayName: 'Print Provisioning Success'
 
-# 4. Delete the Search Service
-- task: AzureCLI@2
-  displayName: 'Delete Search Service for Cost Control'
-  condition: always()
+# 4. Build deployable Function package
+- task: ArchiveFiles@2
+  displayName: 'Archive Function App Code'
   inputs:
-    azureSubscription: $(serviceConnectionName)
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      ENDPOINT="$(searchEndpoint)"
-      NAME=$(echo $ENDPOINT | sed -e 's/https:\/\///' -e 's/.search.windows.net//')
-      echo "Targeting Search Service: $NAME for deletion..."
-      az search service delete --name "$NAME" --resource-group $(resourceGroupName) --yes
-      echo "Search Service $NAME has been successfully deleted."
+    rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/functionapp.zip'
+    replaceExistingArchive: true
 
-# 5. Final Status (FIXED INDENTATION)
+# 5. Deploy Function App package
+- task: AzureFunctionApp@2
+  displayName: 'Deploy Function App'
+  inputs:
+    connectedServiceNameARM: $(serviceConnectionName)
+    appType: functionAppLinux
+    appName: $(functionAppNameOut)
+    package: '$(Build.ArtifactStagingDirectory)/functionapp.zip'
+
+# 6. Final Status
 - script: |
-    echo "The pipeline has completed the ephemeral test cycle."
+    echo "Resources provisioned and Function App deployed."
   displayName: 'Print Final Status'
   condition: always()

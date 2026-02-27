@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from azure.core.credentials import AzureKeyCredential
 from azure.identity import DefaultAzureCredential
 from azure.ai.documentintelligence import DocumentIntelligenceClient
-from azure.ai.documentintelligence.models import AnalyzeDocumentRequest, DocumentContentFormat
+from azure.ai.documentintelligence.models import DocumentContentFormat
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -58,6 +58,15 @@ class PDFToMarkdownService:
                 content_type="application/pdf",
                 output_content_format=DocumentContentFormat.MARKDOWN
             )
+        return poller.result().content
+
+    def convert_pdf_bytes(self, pdf_content: bytes) -> str:
+        poller = self.client.begin_analyze_document(
+            "prebuilt-layout",
+            pdf_content,
+            content_type="application/pdf",
+            output_content_format=DocumentContentFormat.MARKDOWN
+        )
         return poller.result().content
 
 

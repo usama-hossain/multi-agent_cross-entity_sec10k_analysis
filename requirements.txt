@@ -8,10 +8,11 @@ azure-identity
 
 # --- Document Processing & Extraction ---
 azure-storage-blob
+azure-storage-queue
 azure-ai-documentintelligence>=1.0.0
 beautifulsoup4
 lxml
-pdfkit
+xhtml2pdf
 
 # --- RAG & Chunking ---
 langchain-text-splitters

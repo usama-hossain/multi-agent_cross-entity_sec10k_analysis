@@ -1,8 +1,10 @@
 import os
 import requests
 import json
+from typing import Optional
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import ContentSettings
 
 class SECDownloaderService:
     def __init__(self):
@@ -16,19 +18,46 @@ class SECDownloaderService:
 
         # Initialize Azure Clients
         account_url = os.getenv("BLOB_ACCOUNT_URL")
-        container_name = os.getenv("BLOB_CONTAINER_NAME", "raw-10k-filings")
+        connection_string = os.getenv("AzureWebJobsStorage")
+        container_name = os.getenv("BLOB_CONTAINER_NAME", "sec-filings")
         
         if account_url:
             self.blob_service_client = BlobServiceClient(account_url, credential=DefaultAzureCredential())
             self.container_client = self.blob_service_client.get_container_client(container_name)
             if not self.container_client.exists():
                 self.container_client.create_container()
+        elif connection_string and connection_string != "UseDevelopmentStorage=true":
+            self.blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+            self.container_client = self.blob_service_client.get_container_client(container_name)
+            if not self.container_client.exists():
+                self.container_client.create_container()
         else:
-            print("WARNING: BLOB_ACCOUNT_URL not set. Uploads will be skipped.")
+            print("WARNING: Blob connection not configured. Uploads will be skipped.")
             self.container_client = None
 
         # Load Ticker -> CIK map (Cached for performance)
         self.ticker_map = self._load_ticker_map()
+
+    def blob_exists(self, blob_name: str) -> bool:
+        if not self.container_client:
+            return False
+        return self.container_client.get_blob_client(blob_name).exists()
+
+    def upload_blob(self, blob_name: str, data: bytes, content_type: Optional[str] = None):
+        if not self.container_client:
+            raise RuntimeError("Blob container client is not initialized.")
+        self.container_client.upload_blob(
+            name=blob_name,
+            data=data,
+            overwrite=True,
+            content_settings=ContentSettings(content_type=content_type) if content_type else None
+        )
+
+    def download_blob(self, blob_name: str) -> bytes:
+        if not self.container_client:
+            raise RuntimeError("Blob container client is not initialized.")
+        blob_client = self.container_client.get_blob_client(blob_name)
+        return blob_client.download_blob().readall()
 
     def _load_ticker_map(self):
         """Fetches the official SEC map of Ticker -> CIK."""
@@ -108,6 +137,43 @@ class SECDownloaderService:
                 print(f"Failed to download file content for {ticker}")
 
         return results
+
+    def fetch_latest_10k(self, ticker: str):
+        cik = self.ticker_map.get(ticker.upper())
+        if not cik:
+            raise ValueError(f"CIK not found for {ticker}")
+
+        cik_padded = str(cik).zfill(10)
+        meta_url = f"https://data.sec.gov/submissions/CIK{cik_padded}.json"
+        resp = requests.get(meta_url, headers=self.headers)
+        resp.raise_for_status()
+        data = resp.json()
+        filings = data.get("filings", {}).get("recent", {})
+
+        accession_num = None
+        primary_doc = None
+
+        if "form" in filings:
+            for i, form in enumerate(filings["form"]):
+                if form == "10-K":
+                    accession_num = filings["accessionNumber"][i]
+                    primary_doc = filings["primaryDocument"][i]
+                    break
+
+        if not accession_num:
+            raise ValueError(f"No 10-K found for {ticker}")
+
+        accession_no_dashes = accession_num.replace("-", "")
+        file_url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_no_dashes}/{primary_doc}"
+        file_resp = requests.get(file_url, headers=self.headers)
+        file_resp.raise_for_status()
+
+        return {
+            "ticker": ticker.upper(),
+            "accession": accession_num,
+            "primary_document": primary_doc,
+            "html_bytes": file_resp.content
+        }
 
 if __name__ == "__main__":
     # Local Test: Ensure 'az login' is run and BLOB_ACCOUNT_URL is set in environment

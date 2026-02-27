@@ -1,7 +1,16 @@
 import os
-import pdfkit
+from io import BytesIO
+from xhtml2pdf import pisa
 
 class HTMLToPDFService:
+    def convert_html_bytes(self, html_content: bytes) -> bytes:
+        html_string = html_content.decode("utf-8", errors="ignore")
+        output = BytesIO()
+        result = pisa.CreatePDF(src=html_string, dest=output)
+        if result.err:
+            raise RuntimeError("Failed to convert HTML to PDF.")
+        return output.getvalue()
+
     def convert(self, html_file_path: str, output_pdf_path: str = None) -> str:
         """Converts a local HTML file to PDF and returns the output path."""
         if not os.path.exists(html_file_path):
@@ -14,11 +23,11 @@ class HTMLToPDFService:
         file_size = os.path.getsize(html_file_path)
         print(f"📄 Converting: {os.path.basename(html_file_path)} ({file_size} bytes)")
 
-        options = {
-            'enable-local-file-access': None,
-            'quiet': ''
-        }
-        pdfkit.from_file(html_file_path, output_pdf_path, options=options)
+        with open(html_file_path, "rb") as html_file:
+            pdf_bytes = self.convert_html_bytes(html_file.read())
+
+        with open(output_pdf_path, "wb") as pdf_file:
+            pdf_file.write(pdf_bytes)
 
         pdf_size = os.path.getsize(output_pdf_path)
         print(f"✅ PDF saved: {output_pdf_path} ({pdf_size} bytes)")
