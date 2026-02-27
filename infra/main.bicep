@@ -1,7 +1,18 @@
+var myUserObjectId = '65295d8c-98be-491b-bc32-ebd721b531d7'
+
 // Parameters for flexibility across regions
 param location string = resourceGroup().location
 param openAiName string = 'openai-${uniqueString(resourceGroup().id)}'
 param searchName string = 'search-${uniqueString(resourceGroup().id)}'
+
+@description('Storage account name for SEC blob data and Function runtime storage (must be globally unique, 3-24 lowercase alphanumeric).')
+param storageAccountName string = 'st${uniqueString(resourceGroup().id)}'
+
+@description('Blob container that holds SEC filing artifacts.')
+param blobContainerName string = 'sec-filings'
+
+@description('Optional object ID for a future Function App managed identity that should also write blobs.')
+param futureFunctionPrincipalObjectId string = ''
 
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: 'utilites-project-logAnalytics'
@@ -55,6 +66,17 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   }
 }
 
+resource kvRoleAssignmentMe 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, myUserObjectId, 'Key Vault Secrets Officer')
+  scope: keyVault
+  properties: {
+    // This GUID is the built-in ID for "Key Vault Secrets Officer"
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7')
+    principalId: myUserObjectId
+    principalType: 'User' 
+  }
+}
+
 // 5. The 'Glue' (Role Assignment): Granting the identity access to the Vault
 resource kvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(keyVault.id, projectIdentity.id, 'Key Vault Secrets User')
@@ -63,6 +85,74 @@ resource kvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' =
     // This is the specific GUID for the "Key Vault Secrets User" built-in role
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
     principalId: projectIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+
+// 5b. Azure Storage Account for SEC blobs and future Function runtime state.
+// Security defaults: HTTPS only, TLS 1.2 minimum, and no anonymous/public blob access.
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
+  name: storageAccountName
+  location: location
+  kind: 'StorageV2'
+  sku: {
+    name: 'Standard_LRS'
+  }
+  properties: {
+    publicNetworkAccess: 'Enabled'
+    supportsHttpsTrafficOnly: true
+    minimumTlsVersion: 'TLS1_2'
+    allowBlobPublicAccess: false
+    accessTier: 'Hot'
+  }
+}
+
+// 5c. Blob service configuration under the storage account.
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' = {
+  parent: storageAccount
+  name: 'default'
+  properties: {
+    deleteRetentionPolicy: {
+      enabled: true
+      days: 7
+    }
+    containerDeleteRetentionPolicy: {
+      enabled: true
+      days: 7
+    }
+    isVersioningEnabled: true
+  }
+}
+
+// 5d. Managed blob container used by the ingestion pipeline.
+resource secFilingsContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobService
+  name: blobContainerName
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
+
+// 5e. Grant the existing project managed identity permission to read/write blobs.
+resource blobRoleAssignmentProjectIdentity 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccount.id, projectIdentity.id, 'Storage Blob Data Contributor')
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+    principalId: projectIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// 5f. Optionally grant a future Function App identity the same blob data permissions.
+resource blobRoleAssignmentFunctionIdentity 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(futureFunctionPrincipalObjectId)) {
+  name: guid(storageAccount.id, futureFunctionPrincipalObjectId, 'Storage Blob Data Contributor')
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+    principalId: futureFunctionPrincipalObjectId
     principalType: 'ServicePrincipal'
   }
 }
@@ -124,7 +214,35 @@ resource kvDiag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   }
 }
 
+// Storage account-level telemetry for capacity/transaction monitoring.
+resource storageAccountDiag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: '${storageAccount.name}-diag'
+  scope: storageAccount
+  properties: {
+    workspaceId: logAnalytics.id
+    metrics: [ { category: 'AllMetrics', enabled: true } ]
+  }
+}
+
+// Blob service diagnostics for operation logging (read/write/delete) and metrics.
+resource blobServiceDiag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: '${storageAccount.name}-blob-diag'
+  scope: blobService
+  properties: {
+    workspaceId: logAnalytics.id
+    logs: [
+      { category: 'StorageRead', enabled: true }
+      { category: 'StorageWrite', enabled: true }
+      { category: 'StorageDelete', enabled: true }
+    ]
+    metrics: [ { category: 'AllMetrics', enabled: true } ]
+  }
+}
+
 
 output openAiEndpoint string = openAiAccount.properties.endpoint
 output searchEndpoint string = 'https://${searchName}.search.windows.net'
 output docIntelligenceEndpoint string = docIntelligence.properties.endpoint
+output storageAccountNameOut string = storageAccount.name
+output blobAccountUrl string = storageAccount.properties.primaryEndpoints.blob
+output blobContainerNameOut string = secFilingsContainer.name
