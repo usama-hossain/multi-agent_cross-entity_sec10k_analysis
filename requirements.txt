@@ -13,6 +13,7 @@ azure-ai-documentintelligence>=1.0.0
 beautifulsoup4
 lxml
 xhtml2pdf
+playwright
 
 # --- RAG & Chunking ---
 langchain-text-splitters

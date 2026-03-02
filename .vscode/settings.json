@@ -1,0 +1,6 @@
+{
+  "python.defaultInterpreterPath": "/workspaces/codespaces-blank/Project1/.venv/bin/python",
+  "azureFunctions.pythonVenv": ".venv",
+  "azureFunctions.projectLanguage": "Python",
+  "azureFunctions.projectRuntime": "~4"
+}
