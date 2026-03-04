@@ -139,6 +139,20 @@ class SECDownloaderService:
         return results
 
     def fetch_latest_10k(self, ticker: str):
+        metadata = self.fetch_latest_10k_metadata(ticker)
+        html_bytes = self.download_filing_html(metadata["file_url"])
+
+        return {
+            "ticker": metadata["ticker"],
+            "cik": metadata["cik"],
+            "company_name": metadata.get("company_name"),
+            "accession": metadata["accession"],
+            "primary_document": metadata["primary_document"],
+            "file_url": metadata["file_url"],
+            "html_bytes": html_bytes,
+        }
+
+    def fetch_latest_10k_metadata(self, ticker: str):
         cik = self.ticker_map.get(ticker.upper())
         if not cik:
             raise ValueError(f"CIK not found for {ticker}")
@@ -165,15 +179,20 @@ class SECDownloaderService:
 
         accession_no_dashes = accession_num.replace("-", "")
         file_url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_no_dashes}/{primary_doc}"
-        file_resp = requests.get(file_url, headers=self.headers)
-        file_resp.raise_for_status()
 
         return {
             "ticker": ticker.upper(),
+            "cik": str(cik).zfill(10),
+            "company_name": data.get("name") or ticker.upper(),
             "accession": accession_num,
             "primary_document": primary_doc,
-            "html_bytes": file_resp.content
+            "file_url": file_url,
         }
+
+    def download_filing_html(self, file_url: str) -> bytes:
+        file_resp = requests.get(file_url, headers=self.headers)
+        file_resp.raise_for_status()
+        return file_resp.content
 
 if __name__ == "__main__":
     # Local Test: Ensure 'az login' is run and BLOB_ACCOUNT_URL is set in environment

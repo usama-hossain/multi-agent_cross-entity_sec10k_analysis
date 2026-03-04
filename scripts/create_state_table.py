@@ -36,7 +36,7 @@ for item in data:
         "CIK": item["cik"],
         "CompanyName": item["conformed_name"],
         "SourceBlob": item["blob_name"],
-        "Status": "markdown_converted" # downloaded, pdf_converted, markdown_converted, error.
+        "Status": "markdown_converted" # ready, pdf_converted, markdown_converted, error.
     }
     table_client.upsert_entity(entity)
     print(f"Populated: {item['conformed_name']}")
