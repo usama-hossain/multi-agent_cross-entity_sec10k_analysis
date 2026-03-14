@@ -7,15 +7,13 @@ import azure.functions as func
 from azure.core.exceptions import ResourceExistsError
 from azure.storage.queue import QueueClient
 
-from src.services.html_to_pdf import HTMLToPDFService
-from src.services.pdf_to_markdown import PDFToMarkdownService
 from src.services.processing_state import ProcessingStateService
 from src.services.sec_downloader import SECDownloaderService
+from src.services.sec_edgar_markdown import SECEdgarMarkdownService
 
 app = func.FunctionApp()
 
-HTML_QUEUE_NAME = os.getenv("SEC_HTML_QUEUE_NAME", "sec-html-jobs")
-PDF_QUEUE_NAME = os.getenv("SEC_PDF_QUEUE_NAME", "sec-pdf-jobs")
+CONVERT_QUEUE_NAME = os.getenv("SEC_CONVERT_QUEUE_NAME", "sec-convert-jobs")
 TICKERS = ["NEE", "DUK", "SO", "AEP", "CEG"]
 
 
@@ -43,11 +41,9 @@ def manual_kickoff(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json",
         )
 
-    html_queue_client = _get_queue_client(queue_connection_string, HTML_QUEUE_NAME)
-    pdf_queue_client = _get_queue_client(queue_connection_string, PDF_QUEUE_NAME)
+    convert_queue_client = _get_queue_client(queue_connection_string, CONVERT_QUEUE_NAME)
 
-    enqueued_html = 0
-    enqueued_pdf = 0
+    enqueued = 0
     skipped = 0
     failed = []
 
@@ -57,43 +53,23 @@ def manual_kickoff(req: func.HttpRequest) -> func.HttpResponse:
             accession = filing_meta["accession"]
 
             html_blob = f"raw/html/{ticker}/{accession}/10-K.html"
-            pdf_blob = f"processed/pdf/{ticker}/{accession}/10-K.pdf"
             markdown_blob = f"processed/md/{ticker}/{accession}/10-K.md"
             status = state_service.get_status(accession)
 
-            if status == "markdown_converted":
+            if status in ("markdown_converted", "error"):
                 skipped += 1
                 continue
 
-            if status == "pdf_converted":
+            if status in ("ready", "pdf_converted"):
                 message = {
                     "ticker": ticker,
                     "accession": accession,
-                    "pdf_blob": pdf_blob,
                     "markdown_blob": markdown_blob,
                     "attempt": 1,
                     "queued_at_utc": datetime.datetime.utcnow().isoformat(),
                 }
-                pdf_queue_client.send_message(json.dumps(message))
-                enqueued_pdf += 1
-                continue
-
-            if status == "ready":
-                message = {
-                    "ticker": ticker,
-                    "accession": accession,
-                    "html_blob": html_blob,
-                    "pdf_blob": pdf_blob,
-                    "markdown_blob": markdown_blob,
-                    "attempt": 1,
-                    "queued_at_utc": datetime.datetime.utcnow().isoformat(),
-                }
-                html_queue_client.send_message(json.dumps(message))
-                enqueued_html += 1
-                continue
-
-            if status == "error":
-                skipped += 1
+                convert_queue_client.send_message(json.dumps(message))
+                enqueued += 1
                 continue
 
             # TODO: Future enhancement - add atomic claim/lease before download to prevent concurrent kickoff races.
@@ -112,14 +88,12 @@ def manual_kickoff(req: func.HttpRequest) -> func.HttpResponse:
             message = {
                 "ticker": ticker,
                 "accession": accession,
-                "html_blob": html_blob,
-                "pdf_blob": pdf_blob,
                 "markdown_blob": markdown_blob,
                 "attempt": 1,
                 "queued_at_utc": datetime.datetime.utcnow().isoformat(),
             }
-            html_queue_client.send_message(json.dumps(message))
-            enqueued_html += 1
+            convert_queue_client.send_message(json.dumps(message))
+            enqueued += 1
 
         except Exception as ex:
             logging.exception("Kickoff failed for ticker=%s", ticker)
@@ -129,8 +103,7 @@ def manual_kickoff(req: func.HttpRequest) -> func.HttpResponse:
         json.dumps(
             {
                 "status": "ok",
-                "enqueued_html": enqueued_html,
-                "enqueued_pdf": enqueued_pdf,
+                "enqueued": enqueued,
                 "skipped": skipped,
                 "failed": failed,
             }
@@ -140,106 +113,36 @@ def manual_kickoff(req: func.HttpRequest) -> func.HttpResponse:
     )
 
 
-@app.function_name(name="html_to_pdf_worker")
-@app.queue_trigger(arg_name="msg", queue_name=HTML_QUEUE_NAME, connection="AzureWebJobsStorage")
-def html_to_pdf_worker(msg: func.QueueMessage) -> None:
+@app.function_name(name="sec_markdown_worker")
+@app.queue_trigger(arg_name="msg", queue_name=CONVERT_QUEUE_NAME, connection="AzureWebJobsStorage")
+def sec_markdown_worker(msg: func.QueueMessage) -> None:
     state_service = ProcessingStateService()
     try:
         payload = json.loads(msg.get_body().decode("utf-8"))
         ticker = payload["ticker"]
         accession = payload["accession"]
-        html_blob = payload["html_blob"]
-        pdf_blob = payload["pdf_blob"]
-        markdown_blob = payload["markdown_blob"]
-
-        logging.info("html_to_pdf_worker start ticker=%s accession=%s", ticker, accession)
-
-        downloader = SECDownloaderService()
-        converter = HTMLToPDFService()
-        current_status = state_service.get_status(accession)
-
-        if current_status == "markdown_converted":
-            return
-
-        if current_status == "pdf_converted":
-            return
-
-        if current_status != "ready":
-            logging.warning("Skipping html_to_pdf_worker due to unexpected status=%s accession=%s", current_status, accession)
-            return
-
-        if not downloader.blob_exists(pdf_blob):
-            html_bytes = downloader.download_blob(html_blob)
-            pdf_bytes = converter.convert_html_bytes(html_bytes)
-            downloader.upload_blob(pdf_blob, pdf_bytes, content_type="application/pdf")
-
-        state_service.update_status(accession, "pdf_converted")
-
-        queue_connection_string = os.getenv("AzureWebJobsStorage")
-        if not queue_connection_string:
-            raise RuntimeError("AzureWebJobsStorage is not configured.")
-
-        next_queue_client = _get_queue_client(queue_connection_string, PDF_QUEUE_NAME)
-
-        next_message = {
-            "ticker": ticker,
-            "accession": accession,
-            "pdf_blob": pdf_blob,
-            "markdown_blob": markdown_blob,
-            "attempt": payload.get("attempt", 1),
-            "queued_at_utc": datetime.datetime.utcnow().isoformat(),
-        }
-        next_queue_client.send_message(json.dumps(next_message))
-    except Exception as ex:
-        logging.exception("html_to_pdf_worker failed")
-        try:
-            accession = json.loads(msg.get_body().decode("utf-8")).get("accession")
-            if accession:
-                state_service.update_status(accession, "error", error_message=str(ex))
-        except Exception:
-            logging.exception("Failed to persist error status for html_to_pdf_worker")
-        return
-
-
-@app.function_name(name="pdf_to_markdown_worker")
-@app.queue_trigger(arg_name="msg", queue_name=PDF_QUEUE_NAME, connection="AzureWebJobsStorage")
-def pdf_to_markdown_worker(msg: func.QueueMessage) -> None:
-    state_service = ProcessingStateService()
-    try:
-        payload = json.loads(msg.get_body().decode("utf-8"))
-        accession = payload["accession"]
-        pdf_blob = payload["pdf_blob"]
         markdown_blob = payload["markdown_blob"]
 
         downloader = SECDownloaderService()
         current_status = state_service.get_status(accession)
 
         if current_status == "markdown_converted":
-            return
-
-        if current_status != "pdf_converted":
-            logging.warning(
-                "Skipping pdf_to_markdown_worker due to unexpected status=%s accession=%s",
-                current_status,
-                accession,
-            )
             return
 
         if downloader.blob_exists(markdown_blob):
             state_service.update_status(accession, "markdown_converted")
             return
 
-        markdown_service = PDFToMarkdownService()
-        pdf_bytes = downloader.download_blob(pdf_blob)
-        markdown = markdown_service.convert_pdf_bytes(pdf_bytes)
+        sec_markdown_service = SECEdgarMarkdownService()
+        markdown = sec_markdown_service.convert_latest_10k_markdown(ticker)
         downloader.upload_blob(markdown_blob, markdown.encode("utf-8"), content_type="text/markdown")
         state_service.update_status(accession, "markdown_converted")
     except Exception as ex:
-        logging.exception("pdf_to_markdown_worker failed")
+        logging.exception("sec_markdown_worker failed")
         try:
             accession = json.loads(msg.get_body().decode("utf-8")).get("accession")
             if accession:
                 state_service.update_status(accession, "error", error_message=str(ex))
         except Exception:
-            logging.exception("Failed to persist error status for pdf_to_markdown_worker")
+            logging.exception("Failed to persist error status for sec_markdown_worker")
         return

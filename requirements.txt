@@ -10,11 +10,9 @@ azure-identity
 azure-data-tables
 azure-storage-blob
 azure-storage-queue
-azure-ai-documentintelligence>=1.0.0
+edgartools
 beautifulsoup4
 lxml
-xhtml2pdf
-playwright
 
 # --- RAG & Chunking ---
 langchain-text-splitters
