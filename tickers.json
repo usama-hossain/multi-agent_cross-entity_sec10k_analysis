@@ -1,0 +1,68 @@
+{
+  "ecosystem": {
+    "sector": "energy-utility",
+    "primary": "VST",
+    "companies": [
+      {
+        "ticker": "VST",
+        "name": "Vistra Corp",
+        "role": "primary",
+        "description": "Integrated power company operating retail electricity and power generation across Texas and the PJM market"
+      },
+      {
+        "ticker": "NRG",
+        "name": "NRG Energy",
+        "role": "competitor",
+        "description": "Retail electricity provider and power generator competing directly with Vistra in Texas and Northeast markets"
+      },
+      {
+        "ticker": "CEG",
+        "name": "Constellation Energy",
+        "role": "competitor",
+        "description": "Largest US nuclear fleet operator and clean energy supplier, competing in wholesale and C&I power markets"
+      },
+      {
+        "ticker": "NEE",
+        "name": "NextEra Energy",
+        "role": "competitor",
+        "description": "Largest US utility by market cap, dominant in renewables and regulated utility operations via FPL"
+      },
+      {
+        "ticker": "ETR",
+        "name": "Entergy Corporation",
+        "role": "partner",
+        "description": "Regulated utility operating in the Gulf South, interconnected with Vistra through ERCOT-adjacent grid operations"
+      },
+      {
+        "ticker": "OKE",
+        "name": "ONEOK Inc",
+        "role": "supplier",
+        "description": "Natural gas midstream operator supplying gas gathering, processing, and transportation to gas-fired generators"
+      },
+      {
+        "ticker": "KMI",
+        "name": "Kinder Morgan",
+        "role": "supplier",
+        "description": "Major natural gas pipeline operator providing fuel delivery infrastructure to power generation facilities"
+      },
+      {
+        "ticker": "EQIX",
+        "name": "Equinix",
+        "role": "customer",
+        "description": "Global data center REIT with significant power procurement needs driving hyperscale electricity demand"
+      },
+      {
+        "ticker": "DLR",
+        "name": "Digital Realty",
+        "role": "customer",
+        "description": "Data center operator and large-scale power buyer, particularly in Texas markets where Vistra generates"
+      },
+      {
+        "ticker": "VRT",
+        "name": "Vertiv Holdings",
+        "role": "partner",
+        "description": "Critical infrastructure provider for data centers, adjacent to Vistra through shared data center energy demand chain"
+      }
+    ]
+  }
+}

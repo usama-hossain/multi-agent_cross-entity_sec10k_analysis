@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import os
+from pathlib import Path
 
 import azure.functions as func
 from azure.core.exceptions import ResourceExistsError
@@ -14,7 +15,28 @@ from src.services.sec_edgar_markdown import SECEdgarMarkdownService
 app = func.FunctionApp()
 
 CONVERT_QUEUE_NAME = os.getenv("SEC_CONVERT_QUEUE_NAME", "sec-convert-jobs")
-TICKERS = ["NEE", "DUK", "SO", "AEP", "CEG"]
+
+
+def _load_tickers() -> list[str]:
+    tickers_path = Path(__file__).with_name("tickers.json")
+    with tickers_path.open("r", encoding="utf-8") as tickers_file:
+        payload = json.load(tickers_file)
+
+    companies = payload.get("ecosystem", {}).get("companies", [])
+    tickers = []
+    seen = set()
+
+    for company in companies:
+        ticker = str(company.get("ticker", "")).strip().upper()
+        if not ticker or ticker in seen:
+            continue
+        seen.add(ticker)
+        tickers.append(ticker)
+
+    if not tickers:
+        raise ValueError("tickers.json does not contain any valid tickers.")
+
+    return tickers
 
 
 def _get_queue_client(connection_string: str, queue_name: str) -> QueueClient:
@@ -42,12 +64,13 @@ def manual_kickoff(req: func.HttpRequest) -> func.HttpResponse:
         )
 
     convert_queue_client = _get_queue_client(queue_connection_string, CONVERT_QUEUE_NAME)
+    tickers = _load_tickers()
 
     enqueued = 0
     skipped = 0
     failed = []
 
-    for ticker in TICKERS:
+    for ticker in tickers:
         try:
             filing_meta = downloader.fetch_latest_10k_metadata(ticker)
             accession = filing_meta["accession"]
