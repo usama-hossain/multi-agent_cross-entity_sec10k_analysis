@@ -152,7 +152,10 @@ class SECDownloaderService:
             "html_bytes": html_bytes,
         }
 
-    def fetch_latest_10k_metadata(self, ticker: str):
+    def fetch_recent_10k_metadata(self, ticker: str, max_filings: int = 5):
+        if max_filings < 1:
+            raise ValueError("max_filings must be at least 1")
+
         cik = self.ticker_map.get(ticker.upper())
         if not cik:
             raise ValueError(f"CIK not found for {ticker}")
@@ -164,30 +167,64 @@ class SECDownloaderService:
         data = resp.json()
         filings = data.get("filings", {}).get("recent", {})
 
-        accession_num = None
-        primary_doc = None
+        forms = filings.get("form", [])
+        accessions = filings.get("accessionNumber", [])
+        primary_docs = filings.get("primaryDocument", [])
+        report_dates = filings.get("reportDate", [])
+        filing_dates = filings.get("filingDate", [])
 
-        if "form" in filings:
-            for i, form in enumerate(filings["form"]):
-                if form == "10-K":
-                    accession_num = filings["accessionNumber"][i]
-                    primary_doc = filings["primaryDocument"][i]
-                    break
+        results = []
+        for i, form in enumerate(forms):
+            if form != "10-K":
+                continue
 
-        if not accession_num:
-            raise ValueError(f"No 10-K found for {ticker}")
+            accession_num = accessions[i] if i < len(accessions) else None
+            primary_doc = primary_docs[i] if i < len(primary_docs) else None
+            report_date = report_dates[i] if i < len(report_dates) else None
+            filing_date = filing_dates[i] if i < len(filing_dates) else None
 
-        accession_no_dashes = accession_num.replace("-", "")
-        file_url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_no_dashes}/{primary_doc}"
+            if not accession_num or not primary_doc:
+                continue
 
-        return {
-            "ticker": ticker.upper(),
-            "cik": str(cik).zfill(10),
-            "company_name": data.get("name") or ticker.upper(),
-            "accession": accession_num,
-            "primary_document": primary_doc,
-            "file_url": file_url,
-        }
+            accession_no_dashes = accession_num.replace("-", "")
+            file_url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_no_dashes}/{primary_doc}"
+            fiscal_year = None
+            if isinstance(report_date, str) and len(report_date) >= 4:
+                fiscal_year = report_date[:4]
+            elif isinstance(filing_date, str) and len(filing_date) >= 4:
+                fiscal_year = filing_date[:4]
+
+            results.append(
+                {
+                    "ticker": ticker.upper(),
+                    "cik": str(cik).zfill(10),
+                    "company_name": data.get("name") or ticker.upper(),
+                    "accession": accession_num,
+                    "primary_document": primary_doc,
+                    "file_url": file_url,
+                    "form": form,
+                    "report_date": report_date,
+                    "filing_date": filing_date,
+                    "fiscal_year": fiscal_year,
+                }
+            )
+
+            if len(results) >= max_filings:
+                break
+
+        if not results:
+            print(f"No 10-K filings found for {ticker}")
+            return []
+
+        if len(results) < max_filings:
+            print(
+                f"{ticker.upper()}: only found {len(results)} 10-K filing(s); requested {max_filings}."
+            )
+
+        return results
+
+    def fetch_latest_10k_metadata(self, ticker: str):
+        return self.fetch_recent_10k_metadata(ticker, max_filings=1)[0]
 
     def download_filing_html(self, file_url: str) -> bytes:
         file_resp = requests.get(file_url, headers=self.headers)
