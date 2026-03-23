@@ -46,12 +46,30 @@ def _import_function_app_with_service_stubs():
     sys.modules["src.services.sec_downloader"] = downloader_mod
 
     sec_md_mod = types.ModuleType("src.services.sec_edgar_markdown")
+    sec_sections_mod = types.ModuleType("src.services.sec_edgar_sections")
+    signal_mod = types.ModuleType("src.services.signal_card_extractor")
+    signal_batch_mod = types.ModuleType("src.services.signal_card_batch")
 
     class DummySECEdgarMarkdownService:
         pass
 
+    class DummySECSignalCardService:
+        pass
+
+    class DummySECEdgarSectionsService:
+        pass
+
+    class DummySECSignalCardBatchService:
+        pass
+
     sec_md_mod.SECEdgarMarkdownService = DummySECEdgarMarkdownService
+    sec_sections_mod.SECEdgarSectionsService = DummySECEdgarSectionsService
+    signal_mod.SECSignalCardService = DummySECSignalCardService
+    signal_batch_mod.SECSignalCardBatchService = DummySECSignalCardBatchService
     sys.modules["src.services.sec_edgar_markdown"] = sec_md_mod
+    sys.modules["src.services.sec_edgar_sections"] = sec_sections_mod
+    sys.modules["src.services.signal_card_extractor"] = signal_mod
+    sys.modules["src.services.signal_card_batch"] = signal_batch_mod
 
     if "function_app" in sys.modules:
         del sys.modules["function_app"]
@@ -91,6 +109,9 @@ class FakeStateService:
 
     def upsert_filing(self, **kwargs):
         self.upserts.append(kwargs)
+
+    def set_download_status(self, accession, status, error_message=None):
+        return None
 
 
 class FakeDownloader:
@@ -151,8 +172,8 @@ class KickoffDryRunTests(unittest.TestCase):
             response = self.function_app.manual_kickoff(None)
             body = json.loads(response.get_body().decode("utf-8"))
 
-        self.assertEqual(body["enqueued"], 3)
-        self.assertEqual(body["skipped"], 2)
+        self.assertEqual(body["enqueued"], 4)
+        self.assertEqual(body["skipped"], 1)
         self.assertEqual(len(body["failed"]), 0)
 
         self.assertEqual(len(FakeDownloader.downloads), 1)
