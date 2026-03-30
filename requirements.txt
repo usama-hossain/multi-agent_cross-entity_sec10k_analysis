@@ -17,7 +17,15 @@ lxml
 # --- RAG & Chunking ---
 langchain-text-splitters
 openai
+pydantic
 
 # --- Utilities & Logging ---
 python-dotenv
 requests
+
+# --- Testing & Development ---
+pytest
+pytest-mock
+pytest-xdist
+pytest-cov
+pytest-asyncio
