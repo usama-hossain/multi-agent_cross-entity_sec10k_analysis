@@ -1,0 +1,56 @@
+{
+  "ticker": "EQIX",
+  "fiscal_year": 2023,
+  "filing_date": "2024-02-16",
+  "capital_allocation": {
+    "capex_direction": "growing",
+    "capex_details": "'We are currently investing heavily in our future growth through the build out of multiple additional IBX data centers, expansions of IBX data centers and acquisitions of complementary businesses.'",
+    "capex_split": "'A majority of our cost of revenues is fixed in nature and should not vary significantly from period to period, unless we expand our existing IBX data centers or open or acquire new IBX data centers.'",
+    "language_tone": "'In 2023, we opened nine new data centers, inclusive of new xScale sites via our joint ventures...results in an increase in our total number of data center facilities to 260.'"
+  },
+  "supply_chain_tightness": [
+    {
+      "signal": "rising construction costs and supply chain logistics challenges",
+      "severity": "moderate",
+      "evidence": "'We are currently experiencing rising construction costs which reflect the increase in cost of labor and raw materials, supply chain and logistic challenges, and high demand in our sector.'"
+    },
+    {
+      "signal": "permitting delays due to labor availability",
+      "severity": "moderate",
+      "evidence": "'We are currently experiencing permitting delays in most metros due to reduced production from labor availability.'"
+    }
+  ],
+  "demand_signals": {
+    "customer_growth": "'As of December 31, 2023, we had over 10,000 customers worldwide.'",
+    "backlog_direction": "growing",
+    "load_changes": "'customers are consuming an increasing amount of power per cabinet.'",
+    "evidence": "'Growth in Americas revenues was primarily due to: ... an increase in orders from both our existing customers and new customers during the period.'"
+  },
+  "new_risk_factors": [],
+  "escalated_risk_factors": [],
+  "regulatory_exposure": {
+    "pending_rate_cases": "Not mentioned in filing",
+    "emissions_mandates": "'we committed to becoming climate neutral across our global operations by 2030 and set a validated near-term science-based target (\u201cSBT\u201d) for emissions reduction.'",
+    "compliance_investments": "'issued green bonds approximating $4.9 billion to support our sustainability initiatives.'",
+    "evidence": "'issued green bonds approximating $4.9 billion to support our sustainability initiatives.'"
+  },
+  "strategic_posture": {
+    "direction": "expansion",
+    "summary": "'In 2023, we continued to build new digital offerings and data center offerings to further our vision to power the world\u2019s digital leaders.'",
+    "evidence": "'opened nine new data centers, inclusive of new xScale sites via our joint ventures.'"
+  },
+  "generation_mix_shift": {
+    "coal_retirements": "Not applicable \u2014 not a utility/generator.",
+    "renewable_additions": "Not applicable \u2014 not a utility/generator.",
+    "battery_storage": "Not applicable \u2014 not a utility/generator.",
+    "dispatchable_adequacy": "Not applicable \u2014 not a utility/generator.",
+    "evidence": "Not applicable \u2014 not a utility/generator."
+  },
+  "fuel_and_input_exposure": {
+    "price_sensitivity": "'We are currently experiencing inflation and volatility pressures in the energy market globally... we expect the cost for power to continue to be volatile and unpredictable and subject to inflationary pressures.'",
+    "hedging_changes": "'While we have aimed to minimize our risk via hedging, conservation, and other efficiencies, we expect the cost for power to continue to be volatile and unpredictable.'",
+    "ppa_terms": "'As of December 2023, we executed 18 PPAs in Europe which will bring 687 MW of new wind and solar capacity to Finland, France, Portugal, Spain and Sweden when the projects are operational in 2024, 2025 and 2026.'",
+    "evidence": "'executed 18 PPAs in Europe which will bring 687 MW of new wind and solar capacity...' "
+  },
+  "accession": "0001628280-24-005350"
+}

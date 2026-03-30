@@ -1,0 +1,51 @@
+{
+  "ticker": "EQIX",
+  "fiscal_year": 2022,
+  "filing_date": "2023-02-17",
+  "capital_allocation": {
+    "capex_direction": "growing",
+    "capex_details": "'We are currently investing heavily in our future growth through the build out of multiple additional IBX data centers, expansions of IBX data centers and acquisitions of complementary businesses.'",
+    "capex_split": "'A majority of our cost of revenues is fixed in nature... unless we expand our existing IBX data centers or open or acquire new IBX data centers.'",
+    "language_tone": "'...opened or acquired 13 new IBX data centers, opened three new xScale data centers via our joint ventures, and entered three new markets.'"
+  },
+  "supply_chain_tightness": [
+    {
+      "signal": "increased costs and delays for data center equipment and raw materials",
+      "severity": "moderate",
+      "evidence": "'We are currently experiencing rising construction costs which reflect the increase in cost of labor and raw materials, supply chain and logistic challenges, and high demand in our sector.'"
+    }
+  ],
+  "demand_signals": {
+    "customer_growth": "'Our recurring revenues have comprised more than 90% of our total revenues during the past three years.'",
+    "backlog_direction": "growing",
+    "load_changes": "'customers are consuming an increasing amount of power per cabinet.'",
+    "evidence": "'Growth in Americas revenues was primarily due to: ... an increase in orders from both our existing customers and new customers during the period.'"
+  },
+  "new_risk_factors": [],
+  "escalated_risk_factors": [],
+  "regulatory_exposure": {
+    "pending_rate_cases": "Not mentioned in filing",
+    "emissions_mandates": "'Equinix was the first data center company to commit to a long-term goal of 100% renewable energy across our global portfolio.'",
+    "compliance_investments": "'we issued green bonds approximating $3.7 billion from 2020 to 2021, with an additional $1.2 billion in 2022.'",
+    "evidence": "'issued green bonds approximating $3.7 billion from 2020 to 2021, with an additional $1.2 billion in 2022.'"
+  },
+  "strategic_posture": {
+    "direction": "expansion",
+    "summary": "'In 2022, we continued to build new digital and data center offerings to further our vision to power the world\u2019s digital leaders.'",
+    "evidence": "'opened or acquired 13 new IBX data centers, opened three new xScale data centers via our joint ventures, and entered three new markets.'"
+  },
+  "generation_mix_shift": {
+    "coal_retirements": "Not applicable \u2014 not a utility/generator.",
+    "renewable_additions": "Not applicable \u2014 not a utility/generator.",
+    "battery_storage": "Not applicable \u2014 not a utility/generator.",
+    "dispatchable_adequacy": "Not applicable \u2014 not a utility/generator.",
+    "evidence": "Not applicable \u2014 not a utility/generator."
+  },
+  "fuel_and_input_exposure": {
+    "price_sensitivity": "'We are currently experiencing inflation and volatility pressures in the energy market globally... While we have aimed to minimize our risk exposure related to power procurement in Singapore and globally via hedging, conservation, and other efficiencies, we expect the cost for power to continue to be volatile and unpredictable and subject to inflationary pressures.'",
+    "hedging_changes": "'While we have aimed to minimize our risk exposure related to power procurement in Singapore and globally via hedging...' ",
+    "ppa_terms": "'Equinix...purchases nearly 2.5 million megawatt-hours (MWh) of green power annually from a portfolio of renewable energy projects, including 225 MW of wind power under long-term virtual power purchase agreements.'",
+    "evidence": "'purchase of green power...including 225 MW of wind power under long-term virtual power purchase agreements.'"
+  },
+  "accession": "0001628280-23-004039"
+}

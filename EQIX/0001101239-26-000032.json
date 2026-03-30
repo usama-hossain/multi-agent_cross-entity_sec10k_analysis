@@ -1,0 +1,100 @@
+{
+  "ticker": "EQIX",
+  "fiscal_year": 2025,
+  "filing_date": "2026-02-11",
+  "capital_allocation": {
+    "capex_direction": "growing",
+    "capex_details": "'In 2025, we opened 16 new data centers, including new sites added via our joint ventures and acquisitions.'",
+    "capex_split": "'Net cash used in investing activities increased by $2.5\u00a0billion during the year ended December\u00a031, 2025 as compared to December\u00a031, 2024, primarily due to: $1.2 billion increase in capital expenditures; $657\u00a0million increase in real estate acquisitions; and $251\u00a0million increase in business acquisitions, net of cash acquired, including the TIM Acquisition.'",
+    "language_tone": "'We had 52 active major development projects underway as of January 2026 across 35 metros around the world.'"
+  },
+  "supply_chain_tightness": [
+    {
+      "signal": "chip shortages linked to AI infrastructure demand",
+      "severity": "high",
+      "evidence": "'As a result of the increase in demand for AI infrastructure, we are anticipating chip shortages relative to those experienced in the market in prior years. This shortage could impact our customers and delay or deter customer server deployments within our IBX data centers.'"
+    },
+    {
+      "signal": "tariff exposure for steel and steel derivatives",
+      "severity": "moderate",
+      "evidence": "'At this time, we believe the largest potential tariff impact for us is related to steel and steel derivatives. Tariffs on steel and steel derivatives could lead to significant building cost increases for us if we are unable to source alternative options.'"
+    },
+    {
+      "signal": "shipping disruptions in the Red Sea",
+      "severity": "high",
+      "evidence": "'Attacks on merchant vessels remain high in the Red Sea which is causing disruptions in shipping routes...these routes can add additional transit time and lead to delayed deliveries and increased fuel costs.'"
+    },
+    {
+      "signal": "permitting delays in most metros",
+      "severity": "moderate",
+      "evidence": "'We are currently experiencing permitting delays in most metros. While we don't currently anticipate any material long-term negative impact... these types of delays and stoppages related to permitting from public agencies and utility companies could worsen...'"
+    },
+    {
+      "signal": "power availability and capacity constraints",
+      "severity": "high",
+      "evidence": "'we could face power limitations in our existing IBX data centers, even though we may have additional physical cabinet capacity available within a specific IBX data center, and in our ability to expand our footprint in existing and new markets.'"
+    }
+  ],
+  "demand_signals": {
+    "customer_growth": "'As of December\u00a031, 2025, we had over 10,500 customers worldwide.'",
+    "backlog_direction": "growing",
+    "load_changes": "'customers are consuming an increasing amount of power per cabinet.\u00a0Although we generally do not control the amount of power our customers draw from installed circuits, we have negotiated power consumption limitations with certain high power-demand customers.'",
+    "evidence": "'During the year ended December\u00a031, 2025, we had total Annualized Gross Bookings of $1.6 billion, up 27% from 2024. This growth reflects the overall momentum in customer demand and our ability to capture that demand across our global platform.'"
+  },
+  "new_risk_factors": [
+    {
+      "risk": "actual or proposed U.S. tariffs and potential counter tariffs may increase costs and disrupt our supply chain, with their scope and duration dependent on evolving negotiations and exemptions, making their impact difficult to predict.",
+      "category": "Supply Chain/Regulatory",
+      "evidence": "'actual or proposed U.S. tariffs and potential counter tariffs may increase costs and disrupt our supply chain, with their scope and duration dependent on evolving negotiations and exemptions, making their impact difficult to predict.'"
+    },
+    {
+      "risk": "Attacks on merchant vessels remain high in the Red Sea which is causing disruptions in shipping routes.",
+      "category": "Supply Chain/Geopolitical",
+      "evidence": "'Attacks on merchant vessels remain high in the Red Sea which is causing disruptions in shipping routes...these routes can add additional transit time and lead to delayed deliveries and increased fuel costs.'"
+    },
+    {
+      "risk": "permitting authorities may impose stricter requirements, resulting in longer approval processes, higher costs, or project cancellations.",
+      "category": "Regulatory/Permitting",
+      "evidence": "'Additionally, increased community scrutiny of data center resource use including land, water and power, may lead permitting authorities to impose stricter requirements, resulting in longer approval processes, higher costs, or project cancellations.'"
+    },
+    {
+      "risk": "The development and use of artificial intelligence in the workplace presents risks and challenges that may adversely impact our business and operating results.",
+      "category": "Technology/Innovation",
+      "evidence": "'The development and use of artificial intelligence in the workplace presents risks and challenges that may adversely impact our business and operating results.'"
+    }
+  ],
+  "escalated_risk_factors": [
+    {
+      "risk": "chip shortages and impact from AI demand",
+      "category": "Supply Chain/Technology",
+      "prior_language_summary": "'customers are consuming an increasing amount of power per cabinet.\u00a0Although we generally do not control the amount of power our customers draw from installed circuits, we have negotiated power consumption limitations with certain high power-demand customers.'",
+      "current_language_summary": "'As a result of the increase in demand for AI infrastructure, we are anticipating chip shortages relative to those experienced in the market in prior years. This shortage could impact our customers and delay or deter customer server deployments within our IBX data centers.'",
+      "evidence": "'we are anticipating chip shortages relative to those experienced in the market in prior years...could impact our customers and delay or deter customer server deployments within our IBX data centers.'"
+    }
+  ],
+  "regulatory_exposure": {
+    "pending_rate_cases": "Not mentioned in filing",
+    "emissions_mandates": "'In 2024, our 2040 long-term science-based target was approved by the Science Based Targets initiative (\u201cSBTi\u201d)...In 2024, 96% of our global electricity consumption, and 100% of U.S. and European electricity consumption, was covered by renewable energy sources.'",
+    "compliance_investments": "'As of December 31, 2025, Equinix has issued a total of approximately $9.5 billion in green bonds, with $7 billion in net proceeds allocated to eligible green projects.'",
+    "evidence": "'we updated our Green Finance Framework to broaden our focus, incorporating projects that advance decarbonization, resource efficiency and climate resilience, while also tightening eligibility criteria with more rigorous qualification requirements.'"
+  },
+  "strategic_posture": {
+    "direction": "expansion",
+    "summary": "'We continue to progress on our sustainability strategy and look to build a business and world that reflects our vision to enable innovations that enrich our work, life and planet.'",
+    "evidence": "'In 2025, we opened 16 new data centers, including new sites added via our joint ventures and acquisitions.'"
+  },
+  "generation_mix_shift": {
+    "coal_retirements": "Not applicable \u2014 not a utility/generator.",
+    "renewable_additions": "Not applicable \u2014 not a utility/generator.",
+    "battery_storage": "Not applicable \u2014 not a utility/generator.",
+    "dispatchable_adequacy": "Not applicable \u2014 not a utility/generator.",
+    "evidence": "Not applicable \u2014 not a utility/generator."
+  },
+  "fuel_and_input_exposure": {
+    "price_sensitivity": "'we expect the cost for power to continue to be volatile and unpredictable and subject to inflationary pressures.'",
+    "hedging_changes": "'While we have aimed to minimize our risk, via hedging, conservation, and other efficiencies, we expect the cost for power to continue to be volatile and unpredictable.'",
+    "ppa_terms": "'As of December 31, 2025, we have executed 29 PPAs in 12 countries, which brings our total portfolio to 1,472 MW of new wind and solar capacity.'",
+    "evidence": "'executed 29 PPAs in 12 countries, which brings our total portfolio to 1,472 MW of new wind and solar capacity.'"
+  },
+  "accession": "0001101239-26-000032"
+}

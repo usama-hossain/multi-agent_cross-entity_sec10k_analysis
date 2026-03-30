@@ -1,0 +1,70 @@
+{
+  "ticker": "EQIX",
+  "fiscal_year": 2024,
+  "filing_date": "2025-02-12",
+  "capital_allocation": {
+    "capex_direction": "growing",
+    "capex_details": "'As we continue to grow, we may pursue additional expansion opportunities, primarily the build out of new IBX data centers, in certain of our existing markets which are at or near capacity within the next year, as well as potential acquisitions and joint ventures.'",
+    "capex_split": "'Net cash used in investing activities increased by $713 million during the year ended December\u00a031, 2024 as compared to December\u00a031, 2023, primarily due to: $285\u00a0million increase in capital expenditures; $261\u00a0million investment in a loan receivable.'",
+    "language_tone": "'In 2024, we opened 16 new data centers, inclusive of new xScale sites via our joint ventures.'"
+  },
+  "supply_chain_tightness": [
+    {
+      "signal": "rising labor and raw materials costs for construction",
+      "severity": "moderate",
+      "evidence": "'We are currently experiencing rising construction costs which reflect the increase in cost of labor and raw materials, supply chain and logistic challenges, and high demand in our sector.'"
+    },
+    {
+      "signal": "permitting delays in most metros due to reduced production from labor availability",
+      "severity": "moderate",
+      "evidence": "'We are currently experiencing permitting delays in most metros due to reduced production from labor availability.'"
+    }
+  ],
+  "demand_signals": {
+    "customer_growth": "'As of December\u00a031, 2024, we had over 10,000 customers worldwide.'",
+    "backlog_direction": "growing",
+    "load_changes": "'customers are consuming an increasing amount of power per cabinet.'",
+    "evidence": "'an increase in orders from both our existing customers and new customers during the period.'"
+  },
+  "new_risk_factors": [
+    {
+      "risk": "Geopolitical events and political changes, including the recent change in administration in the U.S., contribute to an already complex and evolving regulatory landscape. If we cannot comply with the evolving laws and regulations in the countries in which we operate, we may be subject to litigation and/or sanctions, adverse revenue impacts and increased costs, and our business and results of operations could be negatively impacted.",
+      "category": "Geopolitical/Regulatory",
+      "evidence": "'Geopolitical events and political changes, including the recent change in administration in the U.S., contribute to an already complex and evolving regulatory landscape...'"
+    }
+  ],
+  "escalated_risk_factors": [
+    {
+      "risk": "Increased supply chain disruption and inflation risk on expansion/construction projects",
+      "category": "Supply Chain/Operations",
+      "prior_language_summary": "'We are currently experiencing rising construction costs which reflect the increase in cost of labor and raw materials, supply chain and logistic challenges, and high demand in our sector. While we have invested in creating a reserve of materials to mitigate supply chain issues and inflation, it may not be sufficient and ongoing delays, difficulty finding replacement products and continued high inflation could affect our business and growth and could have a material effect on our business.'",
+      "current_language_summary": "'While we have invested in creating a reserve of materials to mitigate supply chain issues and inflation, it may not be sufficient and ongoing delays, difficulty finding replacement products and continued high inflation could affect our business and growth and could have a material effect on our business. In certain instances we have elected to pre-buy certain equipment and materials to mitigate supply chain issues before our construction plans are finalized. If our estimates are wrong we may be liable to pay for goods we no longer need. Additional or unexpected disruptions to our supply chain, including in the event of any sustained regional escalation of the current conflict in the Middle East in the area around the Red Sea or more broadly, or inflationary pressures could significantly affect the cost of our planned expansion projects and interfere with our ability to meet commitments to customers who have contracted for space in new IBX data centers under construction.'",
+      "evidence": "'Additional or unexpected disruptions to our supply chain, including in the event of any sustained regional escalation of the current conflict in the Middle East in the area around the Red Sea or more broadly, or inflationary pressures could significantly affect the cost of our planned expansion projects and interfere with our ability to meet commitments to customers who have contracted for space in new IBX data centers under construction.'"
+    }
+  ],
+  "regulatory_exposure": {
+    "pending_rate_cases": "Not mentioned in filing",
+    "emissions_mandates": "'we set a validated near-term science-based target (\u201cSBT\u201d) for emissions reduction across our global operations and supply chain.'",
+    "compliance_investments": "'In 2024, we updated our Green Finance Framework, refreshing our eligibility criteria and introducing new categories, such as climate change adaptation.'",
+    "evidence": "'we updated our Green Finance Framework, refreshing our eligibility criteria and introducing new categories, such as climate change adaptation.'"
+  },
+  "strategic_posture": {
+    "direction": "expansion",
+    "summary": "'In 2024, we continued to build new offerings to further our mission to make digital infrastructure more powerful, accessible and sustainable.'",
+    "evidence": "'opened 16 new data centers, inclusive of new xScale sites via our joint ventures.'"
+  },
+  "generation_mix_shift": {
+    "coal_retirements": "Not applicable \u2014 not a utility/generator.",
+    "renewable_additions": "Not applicable \u2014 not a utility/generator.",
+    "battery_storage": "Not applicable \u2014 not a utility/generator.",
+    "dispatchable_adequacy": "Not applicable \u2014 not a utility/generator.",
+    "evidence": "Not applicable \u2014 not a utility/generator."
+  },
+  "fuel_and_input_exposure": {
+    "price_sensitivity": "'we expect the cost for power to continue to be volatile and unpredictable and subject to inflationary pressures.'",
+    "hedging_changes": "'While we have aimed to minimize our risk, via hedging, conservation, and other efficiencies, we expect the cost for power to continue to be volatile and unpredictable.'",
+    "ppa_terms": "'As of December 31, 2024, we have executed 25 PPAs in 10 countries, which brings our total portfolio to 1,289 MW of new wind and solar capacity.'",
+    "evidence": "'executed 25 PPAs in 10 countries, which brings our total portfolio to 1,289 MW of new wind and solar capacity.'"
+  },
+  "accession": "0001628280-25-005126"
+}

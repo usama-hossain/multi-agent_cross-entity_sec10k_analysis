@@ -1,0 +1,51 @@
+{
+  "ticker": "EQIX",
+  "fiscal_year": 2021,
+  "filing_date": "2022-02-18",
+  "capital_allocation": {
+    "capex_direction": "growing",
+    "capex_details": "'We are currently investing heavily in our future growth through the build out of multiple additional IBX data centers, expansions of IBX data centers and acquisitions of complementary businesses.'",
+    "capex_split": "'The largest components of our cost of revenues are depreciation, rental payments... and utility costs...A majority of our cost of revenues is fixed in nature and should not vary significantly... unless we expand our existing IBX data centers or open or acquire new IBX data centers.'",
+    "language_tone": "'expanding upon that vision to build Platform Equinix, with unmatched scale and reach.'"
+  },
+  "supply_chain_tightness": [
+    {
+      "signal": "supply chain delays for data center equipment",
+      "severity": "moderate",
+      "evidence": "'We are currently experiencing rising construction costs which reflect the increase in cost of labor and raw materials, supply chain and logistic challenges'"
+    }
+  ],
+  "demand_signals": {
+    "customer_growth": "'Our recurring revenues have comprised more than 90% of our total revenues during the past three years. In addition, during the past three years, more than 80% of our monthly recurring revenue bookings came from existing customers, contributing to our revenue growth.'",
+    "backlog_direction": "growing",
+    "load_changes": "'customers are consuming an increasing amount of power per cabinet.'",
+    "evidence": "'Growth in Americas revenues was primarily due to: ... an increase in orders from both our existing customers and new customers during the period.'"
+  },
+  "new_risk_factors": [],
+  "escalated_risk_factors": [],
+  "regulatory_exposure": {
+    "pending_rate_cases": "Not mentioned in filing",
+    "emissions_mandates": "'We have prioritized sustainability and have established long term goals of using 100% clean and renewable energy and reducing our GHG emissions from our operations and supply chain.'",
+    "compliance_investments": "'As a REIT, we generally are permitted to deduct from our U.S. federal taxable income the dividends we pay to our stockholders.'",
+    "evidence": "'We are currently making significant investments in our back-office information technology systems and processes. Difficulties from or disruptions to these efforts may interrupt our normal operations and adversely affect our business and results of operations.'"
+  },
+  "strategic_posture": {
+    "direction": "expansion",
+    "summary": "'Two decades later, we have expanded upon that vision to build Platform Equinix, with unmatched scale and reach.'",
+    "evidence": "'we are providing flexible, hybrid work opportunities in many roles, enhanced collaboration technologies for everyone, and activity-based workspaces at home or onsite.'"
+  },
+  "generation_mix_shift": {
+    "coal_retirements": "Not applicable \u2014 not a utility/generator.",
+    "renewable_additions": "Not applicable \u2014 not a utility/generator.",
+    "battery_storage": "Not applicable \u2014 not a utility/generator.",
+    "dispatchable_adequacy": "Not applicable \u2014 not a utility/generator.",
+    "evidence": "Not applicable \u2014 not a utility/generator."
+  },
+  "fuel_and_input_exposure": {
+    "price_sensitivity": "'We are currently experiencing inflation and volatility pressures in the energy market globally. In particular, current dislocation in the Singapore power market has resulted in Equinix having to buy power at extremely elevated spot rates... we expect the cost for power to continue to be volatile and unpredictable and subject to inflationary pressures.'",
+    "hedging_changes": "'While we have aimed to minimize our risk exposure related to power procurement in Singapore and globally via hedging, conservation, and other efficiencies, we expect the cost for power to continue to be volatile and unpredictable.'",
+    "ppa_terms": "'In the U.S., we purchase more than 2.3 million megawatt-hours (MWh) of green power annually from a portfolio of renewable energy projects, including 225 MW of wind power under long-term virtual power purchase agreements (VPPAs) located in Texas and Oklahoma.'",
+    "evidence": "'purchase of green power annually from a portfolio of renewable energy projects, including 225 MW of wind power under long-term virtual power purchase agreements.'"
+  },
+  "accession": "0001628280-22-003171"
+}
