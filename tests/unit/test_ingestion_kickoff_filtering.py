@@ -6,7 +6,7 @@ Markers: unit
 """
 
 import json
-import unittest
+import pytest
 from unittest.mock import patch
 
 from tests.unit._ingestion_test_helpers import (
@@ -19,57 +19,108 @@ from tests.unit._ingestion_test_helpers import (
 )
 
 
-class KickoffFilteringCharacterizationTests(unittest.TestCase):
-    def setUp(self):
-        self.function_app = import_function_app_with_service_stubs()
-        FakeQueueClient.sent_messages = []
-        FakeQueueClient.from_connection_calls = []
-        FakeStateService.reset()
-        FakeDownloader.reset()
+@pytest.fixture
+def setup_function_app():
+    """Set up function app with mocked services."""
+    function_app = import_function_app_with_service_stubs()
+    FakeQueueClient.sent_messages = []
+    FakeQueueClient.from_connection_calls = []
+    FakeStateService.reset()
+    FakeDownloader.reset()
+    return function_app
 
-    def test_manual_kickoff_returns_500_without_storage_connection(self):
-        with patch.object(self.function_app, "SECDownloaderService", FakeDownloader), patch.object(
-            self.function_app, "ProcessingStateService", FakeStateService
-        ), patch.object(self.function_app, "QueueClient", FakeQueueClient), patch.object(
-            self.function_app, "_load_tickers", return_value=["AEP"]
-        ), patch.object(
-            self.function_app.os,
-            "getenv",
-            side_effect=lambda key, default=None: None if key == "AzureWebJobsStorage" else default,
-        ):
-            response = self.function_app.manual_kickoff(FakeRequest())
+
+@pytest.mark.unit
+class TestKickoffFiltering:
+    """Tests for kickoff validation and ticker-filter behavior."""
+
+    def test_kickoff__missing_storage_config__returns_500(self, setup_function_app):
+        """Verify kickoff returns 500 error when storage connection not configured."""
+        # Arrange
+        function_app = setup_function_app
+        
+        # Act
+        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
+             patch.object(function_app, "ProcessingStateService", FakeStateService), \
+             patch.object(function_app, "QueueClient", FakeQueueClient), \
+             patch.object(function_app, "_load_tickers", return_value=["AEP"]), \
+             patch.object(function_app.os, "getenv",
+                        side_effect=lambda key, default=None: None if key == "AzureWebJobsStorage" else default):
+            response = function_app.manual_kickoff(FakeRequest())
             body = json.loads(response.get_body().decode("utf-8"))
 
-        self.assertEqual(response.status_code, 500)
-        self.assertIn("not configured", body["message"])
-        self.assertEqual(FakeQueueClient.from_connection_calls, [])
+        # Assert
+        assert response.status_code == 500, (
+            f"Should return 500 for missing storage config.\n"
+            f"Expected: 500\n"
+            f"Got: {response.status_code}"
+        )
+        assert "not configured" in body["message"], (
+            f"Error message should indicate storage not configured.\n"
+            f"Got: {body['message']}"
+        )
+        assert FakeQueueClient.from_connection_calls == [], (
+            f"Should not attempt to connect to queue.\n"
+            f"Got calls: {FakeQueueClient.from_connection_calls}"
+        )
 
-    def test_manual_kickoff_rejects_all_invalid_ticker_filter(self):
-        with patch.object(self.function_app, "SECDownloaderService", FakeDownloader), patch.object(
-            self.function_app, "ProcessingStateService", FakeStateService
-        ), patch.object(self.function_app, "QueueClient", FakeQueueClient), patch.object(
-            self.function_app, "_load_tickers", return_value=["AEP", "CEG"]
-        ), patch.object(self.function_app.os, "getenv", side_effect=default_getenv):
-            response = self.function_app.manual_kickoff(FakeRequest({"tickers": "XYZ,ABC"}))
+    def test_kickoff__all_invalid_tickers__returns_400(self, setup_function_app):
+        """Verify kickoff returns 400 when all filtered tickers are invalid."""
+        # Arrange
+        function_app = setup_function_app
+        
+        # Act
+        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
+             patch.object(function_app, "ProcessingStateService", FakeStateService), \
+             patch.object(function_app, "QueueClient", FakeQueueClient), \
+             patch.object(function_app, "_load_tickers", return_value=["AEP", "CEG"]), \
+             patch.object(function_app.os, "getenv", side_effect=default_getenv):
+            response = function_app.manual_kickoff(FakeRequest({"tickers": "XYZ,ABC"}))
             body = json.loads(response.get_body().decode("utf-8"))
 
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(body["requested_tickers"], ["XYZ", "ABC"])
-        self.assertEqual(FakeDownloader.fetch_calls, [])
+        # Assert
+        assert response.status_code == 400, (
+            f"Should return 400 for invalid tickers.\n"
+            f"Expected: 400\n"
+            f"Got: {response.status_code}"
+        )
+        assert body["requested_tickers"] == ["XYZ", "ABC"], (
+            f"Should include requested tickers in response.\n"
+            f"Expected: ['XYZ', 'ABC']\n"
+            f"Got: {body['requested_tickers']}"
+        )
+        assert FakeDownloader.fetch_calls == [], (
+            f"Should not fetch for invalid tickers.\n"
+            f"Got calls: {FakeDownloader.fetch_calls}"
+        )
 
-    def test_manual_kickoff_filters_to_valid_subset(self):
+    def test_kickoff__mixed_valid_invalid_tickers__filters_to_valid(self, setup_function_app):
+        """Verify kickoff filters to valid subset when mix of valid and invalid tickers provided."""
+        # Arrange
+        function_app = setup_function_app
         FakeDownloader.filings_by_ticker = {"AEP": []}
 
-        with patch.object(self.function_app, "SECDownloaderService", FakeDownloader), patch.object(
-            self.function_app, "ProcessingStateService", FakeStateService
-        ), patch.object(self.function_app, "QueueClient", FakeQueueClient), patch.object(
-            self.function_app, "_load_tickers", return_value=["AEP", "CEG"]
-        ), patch.object(self.function_app.os, "getenv", side_effect=default_getenv):
-            response = self.function_app.manual_kickoff(FakeRequest({"tickers": "AEP,ZZZ"}))
+        # Act
+        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
+             patch.object(function_app, "ProcessingStateService", FakeStateService), \
+             patch.object(function_app, "QueueClient", FakeQueueClient), \
+             patch.object(function_app, "_load_tickers", return_value=["AEP", "CEG"]), \
+             patch.object(function_app.os, "getenv", side_effect=default_getenv):
+            response = function_app.manual_kickoff(FakeRequest({"tickers": "AEP,ZZZ"}))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(FakeDownloader.fetch_calls, [("AEP", 5)])
+        # Assert
+        assert response.status_code == 200, (
+            f"Should return 200 for valid filtered tickers.\n"
+            f"Expected: 200\n"
+            f"Got: {response.status_code}"
+        )
+        assert FakeDownloader.fetch_calls == [("AEP", 5)], (
+            f"Should fetch only valid ticker.\n"
+            f"Expected: [('AEP', 5)]\n"
+            f"Got: {FakeDownloader.fetch_calls}"
+        )
 
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main([__file__, "-v"])
+

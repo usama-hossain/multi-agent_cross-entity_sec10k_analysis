@@ -7,50 +7,64 @@ Markers: unit
 
 import json
 import tempfile
-import unittest
+import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from tests.unit._ingestion_test_helpers import import_function_app_with_service_stubs
 
 
-class TickerLoadingCharacterizationTests(unittest.TestCase):
-    def setUp(self):
-        self.function_app = import_function_app_with_service_stubs()
+@pytest.fixture
+def function_app():
+    """Import function app with service stubs."""
+    return import_function_app_with_service_stubs()
 
-    def test_load_tickers_normalizes_and_deduplicates_symbols(self):
+
+@pytest.mark.unit
+class TestTickerLoading:
+    """Tests for ticker loading behavior."""
+
+    def test_load__mixed_case_and_duplicates__normalizes_and_deduplicates(self, function_app):
+        """Verify ticker loading normalizes case and removes duplicates."""
+        # Arrange
         with tempfile.TemporaryDirectory() as temp_dir:
             config_dir = Path(temp_dir) / "config"
             config_dir.mkdir(parents=True, exist_ok=True)
             tickers_file = config_dir / "tickers.json"
             tickers_file.write_text(
-                json.dumps(
-                    {
-                        "ecosystem": {
-                            "companies": [
-                                {"ticker": " aep "},
-                                {"ticker": "AEP"},
-                                {"ticker": "ceg"},
-                                {"ticker": "  "},
-                                {},
-                                {"ticker": "duk"},
-                            ]
-                        }
+                json.dumps({
+                    "ecosystem": {
+                        "companies": [
+                            {"ticker": " aep "},
+                            {"ticker": "AEP"},
+                            {"ticker": "ceg"},
+                            {"ticker": "  "},
+                            {},
+                            {"ticker": "duk"},
+                        ]
                     }
-                ),
+                }),
                 encoding="utf-8",
             )
 
-            with patch.object(self.function_app, "Path") as mock_path_cls:
+            with patch.object(function_app, "Path") as mock_path_cls:
                 path_instance = MagicMock()
                 path_instance.with_name.return_value = config_dir
                 mock_path_cls.return_value = path_instance
 
-                tickers = self.function_app._load_tickers()
+                # Act
+                tickers = function_app._load_tickers()
 
-        self.assertEqual(tickers, ["AEP", "CEG", "DUK"])
+        # Assert
+        assert tickers == ["AEP", "CEG", "DUK"], (
+            f"Should normalize and deduplicate tickers.\n"
+            f"Expected: ['AEP', 'CEG', 'DUK']\n"
+            f"Got: {tickers}"
+        )
 
-    def test_load_tickers_raises_when_no_valid_symbols(self):
+    def test_load__no_valid_symbols__raises_error(self, function_app):
+        """Verify loader raises error when no valid symbols found."""
+        # Arrange
         with tempfile.TemporaryDirectory() as temp_dir:
             config_dir = Path(temp_dir) / "config"
             config_dir.mkdir(parents=True, exist_ok=True)
@@ -60,16 +74,21 @@ class TickerLoadingCharacterizationTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            with patch.object(self.function_app, "Path") as mock_path_cls:
+            with patch.object(function_app, "Path") as mock_path_cls:
                 path_instance = MagicMock()
                 path_instance.with_name.return_value = config_dir
                 mock_path_cls.return_value = path_instance
 
-                with self.assertRaises(ValueError) as ctx:
-                    self.function_app._load_tickers()
+                # Act & Assert
+                with pytest.raises(ValueError) as exc_info:
+                    function_app._load_tickers()
 
-        self.assertIn("does not contain any valid tickers", str(ctx.exception))
+        assert "does not contain any valid tickers" in str(exc_info.value), (
+            f"Error should indicate no valid tickers found.\n"
+            f"Got: {exc_info.value}"
+        )
 
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main([__file__, "-v"])
+

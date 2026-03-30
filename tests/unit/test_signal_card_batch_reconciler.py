@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-import unittest
+import pytest
 from unittest.mock import patch
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -171,37 +171,59 @@ class _FakeBatchServiceInProgress:
         }
 
 
-class BatchReconcilerTests(unittest.TestCase):
-    def test_reconciler_materializes_completed_batch(self):
+@pytest.mark.unit
+class TestBatchReconciler:
+    """Tests for signal card batch reconciler orchestration logic."""
+    
+    def test_reconciler__completed_batch__materializes_results(self):
+        """Reconciler: materializes completed batch results to blob storage."""
         fake_state = _FakeStateService()
         fake_downloader = _FakeDownloader()
 
-        with patch.object(function_app, "ProcessingStateService", return_value=fake_state), patch.object(
-            function_app, "SECDownloaderService", return_value=fake_downloader
-        ), patch.object(function_app, "SECSignalCardBatchService", return_value=_FakeBatchServiceCompleted()):
+        with patch.dict(os.environ, {"SIGNAL_CARD_EXECUTION_MODE": "batch"}), patch.object(
+            function_app, "ProcessingStateService", return_value=fake_state
+        ), patch.object(function_app, "SECDownloaderService", return_value=fake_downloader), patch.object(
+            function_app, "SECSignalCardBatchService", return_value=_FakeBatchServiceCompleted()
+        ):
             function_app.signal_card_batch_reconciler(_FakeTimer())
 
-        self.assertEqual(len(fake_downloader.uploads), 1)
-        self.assertEqual(
-            fake_downloader.uploads[0][0],
-            "processed/signals/VRT/0001628280-22-004533/signal_card.json",
+        # Assert
+        assert len(fake_downloader.uploads) == 1, (
+            f"Should upload exactly 1 signal card. Got {len(fake_downloader.uploads)} uploads."
         )
-        self.assertIn(("0001628280-22-004533", "completed", None), fake_state.batch_updates)
-        self.assertIn(("0001628280-22-004533", "extracted", None), fake_state.signal_updates)
+        assert fake_downloader.uploads[0][0] == "processed/signals/VRT/0001628280-22-004533/signal_card.json", (
+            f"Should upload to correct path. Got: {fake_downloader.uploads[0][0]}"
+        )
+        assert ("0001628280-22-004533", "completed", None) in fake_state.batch_updates, (
+            "Should mark batch as completed in state service."
+        )
+        assert ("0001628280-22-004533", "extracted", None) in fake_state.signal_updates, (
+            "Should mark signal card as extracted in state service."
+        )
 
-    def test_reconciler_marks_in_progress_without_upload(self):
+    def test_reconciler__in_progress_batch__updates_status_without_upload(self):
+        """Reconciler: marks in-progress batches without uploading results."""
         fake_state = _FakeStateServiceInProgress()
         fake_downloader = _FakeDownloader()
 
-        with patch.object(function_app, "ProcessingStateService", return_value=fake_state), patch.object(
-            function_app, "SECDownloaderService", return_value=fake_downloader
-        ), patch.object(function_app, "SECSignalCardBatchService", return_value=_FakeBatchServiceInProgress()):
+        with patch.dict(os.environ, {"SIGNAL_CARD_EXECUTION_MODE": "batch"}), patch.object(
+            function_app, "ProcessingStateService", return_value=fake_state
+        ), patch.object(function_app, "SECDownloaderService", return_value=fake_downloader), patch.object(
+            function_app, "SECSignalCardBatchService", return_value=_FakeBatchServiceInProgress()
+        ):
             function_app.signal_card_batch_reconciler(_FakeTimer())
 
-        self.assertEqual(fake_downloader.uploads, [])
-        self.assertIn(("0001628280-22-004533", "in_progress", None), fake_state.batch_updates)
-        self.assertIn(("0001628280-22-004533", "batch_submitted", None), fake_state.signal_updates)
+        # Assert
+        assert fake_downloader.uploads == [], (
+            "Should not upload any files for in-progress batches."
+        )
+        assert ("0001628280-22-004533", "in_progress", None) in fake_state.batch_updates, (
+            "Should mark batch as in_progress in state service."
+        )
+        assert ("0001628280-22-004533", "batch_submitted", None) in fake_state.signal_updates, (
+            "Should mark signal card as batch_submitted in state service."
+        )
 
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main([__file__, "-v"])

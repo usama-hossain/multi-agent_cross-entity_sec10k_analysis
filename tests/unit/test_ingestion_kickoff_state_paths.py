@@ -6,7 +6,7 @@ Markers: unit
 """
 
 import json
-import unittest
+import pytest
 from unittest.mock import patch
 
 from tests.unit._ingestion_test_helpers import (
@@ -20,18 +20,27 @@ from tests.unit._ingestion_test_helpers import (
 )
 
 
-class KickoffStatePathCharacterizationTests(unittest.TestCase):
-    def setUp(self):
-        self.function_app = import_function_app_with_service_stubs()
-        FakeQueueClient.sent_messages = []
-        FakeQueueClient.from_connection_calls = []
-        FakeStateService.reset()
-        FakeDownloader.reset()
+@pytest.fixture
+def setup_function_app():
+    """Set up function app with mocked services."""
+    function_app = import_function_app_with_service_stubs()
+    FakeQueueClient.sent_messages = []
+    FakeQueueClient.from_connection_calls = []
+    FakeStateService.reset()
+    FakeDownloader.reset()
+    return function_app
 
-    def test_manual_kickoff_skips_when_all_artifacts_exist_and_not_forced(self):
+
+@pytest.mark.unit
+class TestKickoffStatePaths:
+    """Tests for kickoff state/artifact branch behavior."""
+
+    def test_kickoff__all_artifacts_exist__skips_processing(self, setup_function_app):
+        """Verify kickoff skips when all artifacts exist and not forced."""
+        # Arrange
+        function_app = setup_function_app
         filing = single_filing("AEP", "ACC-ALL")
         FakeDownloader.filings_by_ticker = {"AEP": [filing]}
-
         FakeDownloader.existing_blobs = {
             "processed/md/AEP/ACC-ALL/10-K.md",
             "processed/md/AEP/ACC-ALL/item1a.md",
@@ -39,86 +48,118 @@ class KickoffStatePathCharacterizationTests(unittest.TestCase):
             "processed/signals/AEP/ACC-ALL/signal_card.json",
         }
 
-        with patch.object(self.function_app, "SECDownloaderService", FakeDownloader), patch.object(
-            self.function_app, "ProcessingStateService", FakeStateService
-        ), patch.object(self.function_app, "QueueClient", FakeQueueClient), patch.object(
-            self.function_app, "_load_tickers", return_value=["AEP"]
-        ), patch.object(self.function_app.os, "getenv", side_effect=default_getenv):
-            response = self.function_app.manual_kickoff(FakeRequest())
+        # Act
+        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
+             patch.object(function_app, "ProcessingStateService", FakeStateService), \
+             patch.object(function_app, "QueueClient", FakeQueueClient), \
+             patch.object(function_app, "_load_tickers", return_value=["AEP"]), \
+             patch.object(function_app.os, "getenv", side_effect=default_getenv):
+            response = function_app.manual_kickoff(FakeRequest())
             body = json.loads(response.get_body().decode("utf-8"))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(body["skipped"], 1)
-        self.assertEqual(body["enqueued"], 0)
-        self.assertEqual(FakeDownloader.download_calls, [])
-        self.assertEqual(FakeDownloader.upload_calls, [])
-        self.assertEqual(FakeQueueClient.sent_messages, [])
+        # Assert
+        assert response.status_code == 200
+        assert body["skipped"] == 1, (
+            f"Should skip filing when all artifacts exist.\n"
+            f"Expected skipped=1\n"
+            f"Got: {body.get('skipped')}"
+        )
+        assert body["enqueued"] == 0
+        assert FakeDownloader.download_calls == []
+        assert FakeDownloader.upload_calls == []
+        assert FakeQueueClient.sent_messages == []
 
-    def test_manual_kickoff_skips_status_error_accession(self):
+    def test_kickoff__error_status__skips_accession(self, setup_function_app):
+        """Verify kickoff skips accession when status is error."""
+        # Arrange
+        function_app = setup_function_app
         filing = single_filing("AEP", "ACC-ERR")
         FakeDownloader.filings_by_ticker = {"AEP": [filing]}
         FakeStateService.statuses = {"ACC-ERR": "error"}
 
-        with patch.object(self.function_app, "SECDownloaderService", FakeDownloader), patch.object(
-            self.function_app, "ProcessingStateService", FakeStateService
-        ), patch.object(self.function_app, "QueueClient", FakeQueueClient), patch.object(
-            self.function_app, "_load_tickers", return_value=["AEP"]
-        ), patch.object(self.function_app.os, "getenv", side_effect=default_getenv):
-            response = self.function_app.manual_kickoff(FakeRequest())
+        # Act
+        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
+             patch.object(function_app, "ProcessingStateService", FakeStateService), \
+             patch.object(function_app, "QueueClient", FakeQueueClient), \
+             patch.object(function_app, "_load_tickers", return_value=["AEP"]), \
+             patch.object(function_app.os, "getenv", side_effect=default_getenv):
+            response = function_app.manual_kickoff(FakeRequest())
             body = json.loads(response.get_body().decode("utf-8"))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(body["skipped"], 1)
-        self.assertEqual(body["not_downloaded"][0]["reason"], "status_error")
-        self.assertEqual(FakeDownloader.download_calls, [])
-        self.assertEqual(FakeQueueClient.sent_messages, [])
+        # Assert
+        assert response.status_code == 200
+        assert body["skipped"] == 1
+        assert body["not_downloaded"][0]["reason"] == "status_error", (
+            f"Should indicate status_error as reason.\n"
+            f"Got reason: {body['not_downloaded'][0].get('reason')}"
+        )
+        assert FakeDownloader.download_calls == []
+        assert FakeQueueClient.sent_messages == []
 
-    def test_manual_kickoff_enqueues_existing_when_ready_state_present(self):
+    def test_kickoff__ready_status__enqueues_existing(self, setup_function_app):
+        """Verify kickoff enqueues existing filing when status is ready."""
+        # Arrange
+        function_app = setup_function_app
         filing = single_filing("AEP", "ACC-READY")
         FakeDownloader.filings_by_ticker = {"AEP": [filing]}
         FakeStateService.statuses = {"ACC-READY": "ready"}
 
-        with patch.object(self.function_app, "SECDownloaderService", FakeDownloader), patch.object(
-            self.function_app, "ProcessingStateService", FakeStateService
-        ), patch.object(self.function_app, "QueueClient", FakeQueueClient), patch.object(
-            self.function_app, "_load_tickers", return_value=["AEP"]
-        ), patch.object(self.function_app.os, "getenv", side_effect=default_getenv):
-            response = self.function_app.manual_kickoff(FakeRequest())
+        # Act
+        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
+             patch.object(function_app, "ProcessingStateService", FakeStateService), \
+             patch.object(function_app, "QueueClient", FakeQueueClient), \
+             patch.object(function_app, "_load_tickers", return_value=["AEP"]), \
+             patch.object(function_app.os, "getenv", side_effect=default_getenv):
+            response = function_app.manual_kickoff(FakeRequest())
             body = json.loads(response.get_body().decode("utf-8"))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(body["enqueued"], 1)
-        self.assertEqual(len(FakeQueueClient.sent_messages), 1)
+        # Assert
+        assert response.status_code == 200
+        assert body["enqueued"] == 1
+        assert len(FakeQueueClient.sent_messages) == 1
         queued = FakeQueueClient.sent_messages[0]
-        self.assertEqual(queued["ticker"], "AEP")
-        self.assertEqual(queued["accession"], "ACC-READY")
-        self.assertEqual(queued["attempt"], 1)
-        self.assertEqual(FakeDownloader.download_calls, [])
+        assert queued["ticker"] == "AEP", (
+            f"Queued message should have correct ticker.\n"
+            f"Expected: AEP\n"
+            f"Got: {queued.get('ticker')}"
+        )
+        assert queued["accession"] == "ACC-READY"
+        assert queued["attempt"] == 1
+        assert FakeDownloader.download_calls == []
 
-    def test_manual_kickoff_downloads_uploads_and_upserts_for_new_accession(self):
+    def test_kickoff__new_accession__downloads_uploads_and_upserts(self, setup_function_app):
+        """Verify kickoff downloads, uploads, and upserts for new accession."""
+        # Arrange
+        function_app = setup_function_app
         filing = single_filing("AEP", "ACC-NEW")
         FakeDownloader.filings_by_ticker = {"AEP": [filing]}
 
-        with patch.object(self.function_app, "SECDownloaderService", FakeDownloader), patch.object(
-            self.function_app, "ProcessingStateService", FakeStateService
-        ), patch.object(self.function_app, "QueueClient", FakeQueueClient), patch.object(
-            self.function_app, "_load_tickers", return_value=["AEP"]
-        ), patch.object(self.function_app.os, "getenv", side_effect=default_getenv):
-            response = self.function_app.manual_kickoff(FakeRequest())
+        # Act
+        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
+             patch.object(function_app, "ProcessingStateService", FakeStateService), \
+             patch.object(function_app, "QueueClient", FakeQueueClient), \
+             patch.object(function_app, "_load_tickers", return_value=["AEP"]), \
+             patch.object(function_app.os, "getenv", side_effect=default_getenv):
+            response = function_app.manual_kickoff(FakeRequest())
             body = json.loads(response.get_body().decode("utf-8"))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(body["enqueued"], 1)
-        self.assertEqual(FakeDownloader.download_calls, ["https://example.com/ACC-NEW.htm"])
-        self.assertEqual(
-            FakeDownloader.upload_calls,
-            [("raw/html/AEP/ACC-NEW/10-K.html", "text/html", len(b"<html>filing</html>"))],
+        # Assert
+        assert response.status_code == 200
+        assert body["enqueued"] == 1
+        assert FakeDownloader.download_calls == ["https://example.com/ACC-NEW.htm"], (
+            f"Should download filing.\n"
+            f"Expected: ['https://example.com/ACC-NEW.htm']\n"
+            f"Got: {FakeDownloader.download_calls}"
         )
-        self.assertEqual(len(FakeStateService.upserts), 1)
-        self.assertEqual(FakeStateService.upserts[0]["accession"], "ACC-NEW")
-        self.assertEqual(FakeStateService.download_updates, [("ACC-NEW", "downloaded", None)])
-        self.assertEqual(len(FakeQueueClient.sent_messages), 1)
+        assert FakeDownloader.upload_calls == [
+            ("raw/html/AEP/ACC-NEW/10-K.html", "text/html", len(b"<html>filing</html>"))
+        ]
+        assert len(FakeStateService.upserts) == 1
+        assert FakeStateService.upserts[0]["accession"] == "ACC-NEW"
+        assert FakeStateService.download_updates == [("ACC-NEW", "downloaded", None)]
+        assert len(FakeQueueClient.sent_messages) == 1
 
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main([__file__, "-v"])
+
