@@ -1,76 +1,60 @@
 import os
 import requests
-import json
+import logging
 from typing import Optional
-from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient
-from azure.storage.blob import ContentSettings
+from src.adapters.blob_storage import AzureBlobArtifactStore
+
+
+class BlobArtifactStore(AzureBlobArtifactStore):
+    """Compatibility alias for blob adapter usage in existing call sites."""
+
+    pass
 
 class SECDownloaderService:
+    _ticker_map_cache = None
+
     def __init__(self):
         # Professional Config: Load from Env, fail gracefully if missing
         self.company_name = os.getenv("SEC_COMPANY_NAME", "EnergyAI-Research")
         self.email = os.getenv("SEC_EMAIL", "scarredentos@gmail.com")
         self.user_agent = f"{self.company_name} {self.email}"
+        self.request_timeout_seconds = float(os.getenv("SEC_HTTP_TIMEOUT_SECONDS", "20"))
         
         # Headers required by SEC to prevent 403 Forbidden errors
         self.headers = {"User-Agent": self.user_agent}
 
-        # Initialize Azure Clients
-        account_url = os.getenv("BLOB_ACCOUNT_URL")
-        connection_string = os.getenv("AzureWebJobsStorage")
-        container_name = os.getenv("BLOB_CONTAINER_NAME", "sec-filings")
-        
-        if account_url:
-            self.blob_service_client = BlobServiceClient(account_url, credential=DefaultAzureCredential())
-            self.container_client = self.blob_service_client.get_container_client(container_name)
-            if not self.container_client.exists():
-                self.container_client.create_container()
-        elif connection_string and connection_string != "UseDevelopmentStorage=true":
-            self.blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-            self.container_client = self.blob_service_client.get_container_client(container_name)
-            if not self.container_client.exists():
-                self.container_client.create_container()
-        else:
-            print("WARNING: Blob connection not configured. Uploads will be skipped.")
-            self.container_client = None
+        # Keep blob operations in dedicated adapter while preserving legacy methods.
+        self.blob_store = BlobArtifactStore()
 
-        # Load Ticker -> CIK map (Cached for performance)
-        self.ticker_map = self._load_ticker_map()
+        # Load Ticker -> CIK map once per worker process.
+        if SECDownloaderService._ticker_map_cache is None:
+            SECDownloaderService._ticker_map_cache = self._load_ticker_map()
+        self.ticker_map = SECDownloaderService._ticker_map_cache
 
     def blob_exists(self, blob_name: str) -> bool:
-        if not self.container_client:
-            return False
-        return self.container_client.get_blob_client(blob_name).exists()
+        # Backward-compatible facade for existing call sites.
+        return self.blob_store.blob_exists(blob_name)
 
     def upload_blob(self, blob_name: str, data: bytes, content_type: Optional[str] = None):
-        if not self.container_client:
-            raise RuntimeError("Blob container client is not initialized.")
-        self.container_client.upload_blob(
-            name=blob_name,
-            data=data,
-            overwrite=True,
-            content_settings=ContentSettings(content_type=content_type) if content_type else None
-        )
+        # Backward-compatible facade for existing call sites.
+        self.blob_store.upload_blob(blob_name, data, content_type=content_type)
 
     def download_blob(self, blob_name: str) -> bytes:
-        if not self.container_client:
-            raise RuntimeError("Blob container client is not initialized.")
-        blob_client = self.container_client.get_blob_client(blob_name)
-        return blob_client.download_blob().readall()
+        # Backward-compatible facade for existing call sites.
+        return self.blob_store.download_blob(blob_name)
 
     def _load_ticker_map(self):
         """Fetches the official SEC map of Ticker -> CIK."""
-        print("Loading SEC Ticker Map...")
+        logging.info("Loading SEC ticker map from SEC endpoint")
         url = "https://www.sec.gov/files/company_tickers.json"
         try:
-            resp = requests.get(url, headers=self.headers)
+            resp = requests.get(url, headers=self.headers, timeout=self.request_timeout_seconds)
             resp.raise_for_status()
             data = resp.json()
             # Transform {0: {cik_str, ticker, title}, ...} -> {TICKER: CIK}
             return {item["ticker"]: item["cik_str"] for item in data.values()}
         except Exception as e:
-            print(f"Failed to load ticker map: {e}")
+            logging.exception("Failed to load SEC ticker map")
             return {}
 
     def fetch_and_upload_10k(self, tickers: list):
@@ -87,7 +71,7 @@ class SECDownloaderService:
             print(f"Fetching metadata for {ticker} (CIK: {cik_padded})...")
             
             meta_url = f"https://data.sec.gov/submissions/CIK{cik_padded}.json"
-            resp = requests.get(meta_url, headers=self.headers)
+            resp = requests.get(meta_url, headers=self.headers, timeout=self.request_timeout_seconds)
             
             if resp.status_code != 200:
                 print(f"Failed to fetch metadata for {ticker}")
@@ -119,17 +103,13 @@ class SECDownloaderService:
             
             # 4. Stream Download -> Memory -> Azure Blob
             print(f"Downloading {ticker} 10-K from {file_url}...")
-            file_resp = requests.get(file_url, headers=self.headers)
+            file_resp = requests.get(file_url, headers=self.headers, timeout=self.request_timeout_seconds)
             
             if file_resp.status_code == 200:
                 blob_name = f"{ticker}/{accession_num}/10-K.html"
-                if self.container_client:
+                if self.blob_store.container_client:
                     print(f"Uploading to Azure Blob: {blob_name}")
-                    self.container_client.upload_blob(
-                        name=blob_name,
-                        data=file_resp.content, # Bytes in memory
-                        overwrite=True
-                    )
+                    self.blob_store.upload_blob(blob_name, file_resp.content)
                     results[ticker] = "Uploaded"
                 else:
                     results[ticker] = "Downloaded (No Azure Context)"
@@ -162,7 +142,7 @@ class SECDownloaderService:
 
         cik_padded = str(cik).zfill(10)
         meta_url = f"https://data.sec.gov/submissions/CIK{cik_padded}.json"
-        resp = requests.get(meta_url, headers=self.headers)
+        resp = requests.get(meta_url, headers=self.headers, timeout=self.request_timeout_seconds)
         resp.raise_for_status()
         data = resp.json()
         filings = data.get("filings", {}).get("recent", {})
@@ -227,7 +207,7 @@ class SECDownloaderService:
         return self.fetch_recent_10k_metadata(ticker, max_filings=1)[0]
 
     def download_filing_html(self, file_url: str) -> bytes:
-        file_resp = requests.get(file_url, headers=self.headers)
+        file_resp = requests.get(file_url, headers=self.headers, timeout=self.request_timeout_seconds)
         file_resp.raise_for_status()
         return file_resp.content
 
