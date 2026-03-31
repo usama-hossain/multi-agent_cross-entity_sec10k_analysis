@@ -5,7 +5,8 @@ from azure.identity import DefaultAzureCredential
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.ai.documentintelligence.models import DocumentContentFormat
 
-load_dotenv()  # Load environment variables from .env file
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+load_dotenv(os.path.join(PROJECT_ROOT, "config", ".env"))
 
 class PDFToMarkdownService:
     def __init__(self):
@@ -25,7 +26,7 @@ class PDFToMarkdownService:
         print("------------------------------------\n")
 
         if not self.endpoint:
-            raise EnvironmentError("Local setup failed. Check your src/.env file.")
+            raise EnvironmentError("Local setup failed. Check config/.env.")
 
 
         # Initialize the Document Intelligence Client

@@ -7,6 +7,9 @@ csx
 edge
 Publish
 
+# Logging
+logs/
+
 *.user
 *.suo
 *.cscfg
