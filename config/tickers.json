@@ -28,12 +28,6 @@
         "description": "Largest US utility by market cap, dominant in renewables and regulated utility operations via FPL"
       },
       {
-        "ticker": "ETR",
-        "name": "Entergy Corporation",
-        "role": "partner",
-        "description": "Regulated utility operating in the Gulf South, interconnected with Vistra through ERCOT-adjacent grid operations"
-      },
-      {
         "ticker": "OKE",
         "name": "ONEOK Inc",
         "role": "supplier",
