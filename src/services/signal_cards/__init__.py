@@ -1,0 +1,1 @@
+"""Signal-card domain services."""

@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 900 690" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="arr-fwd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1.5L8 5L2 8.5" fill="none" stroke="context-stroke" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="arr-back" viewBox="0 0 10 10" refX="2" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <path d="M8 1.5L2 5L8 8.5" fill="none" stroke="context-stroke" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+    <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.08"/>
+  </filter>
+</defs>
+
+<!-- Background -->
+<rect x="10" y="10" width="880" height="668" rx="20" fill="#0F1B2D" stroke="#1E3A5F" stroke-width="1.5"/>
+<text x="450" y="30" text-anchor="middle" font-size="10" fill="#4A90D9" font-family="'Segoe UI', Arial, sans-serif" font-weight="600" letter-spacing="0.06em">SYSTEM CONTEXT</text>
+
+<!-- ═══ PERSON — SEC Analysts & Ops Team (LEFT) ═══ -->
+<g>
+  <rect x="30" y="220" width="148" height="160" rx="12" fill="#F0F7FF" stroke="#2563EB" stroke-width="1.2" filter="url(#shadow)"/>
+  <!-- Azure-style user icon: blue filled head + shoulders -->
+  <!-- Head circle -->
+  <circle cx="104" cy="263" r="20" fill="#0078D4"/>
+  <!-- Subtle inner highlight -->
+  <circle cx="104" cy="263" r="20" fill="none" stroke="#50A8F0" stroke-width="1.2" opacity="0.5"/>
+  <!-- Face highlight -->
+  <circle cx="104" cy="259" r="9" fill="#FFFFFF" opacity="0.18"/>
+  <!-- Shoulders / body arc -->
+  <path d="M58 346 Q58 310 104 310 Q150 310 150 346" fill="#0078D4"/>
+  <!-- Shoulder highlight -->
+  <path d="M58 346 Q58 322 104 318 Q150 322 150 346" fill="#50A8F0" opacity="0.3"/>
+  <!-- Label -->
+  <text x="104" y="356" text-anchor="middle" font-size="13" font-weight="700" fill="#1E3A8A" font-family="'Segoe UI', Arial, sans-serif">Users</text>
+  <text x="104" y="372" text-anchor="middle" font-size="10" fill="#3B82F6" font-family="'Segoe UI', Arial, sans-serif">[Person]</text>
+</g>
+
+<!-- ═══ MAIN SYSTEM BOX — Signal Card Platform (CENTER) ═══ -->
+<g>
+  <rect x="268" y="80" width="364" height="340" rx="16" fill="#EFF6FF" stroke="#2563EB" stroke-width="2.5" filter="url(#shadow)"/>
+  <rect x="268" y="80" width="364" height="40" rx="16" fill="#2563EB"/>
+  <rect x="268" y="100" width="364" height="20" fill="#2563EB"/>
+  <text x="450" y="106" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF" font-family="'Segoe UI', Arial, sans-serif">Energy/Utility Sector Analysis Platform</text>
+  
+  
+
+  <!-- Row 1 -->
+  <rect x="290" y="160" width="320" height="34" rx="7" fill="#DBEAFE" stroke="#93C5FD" stroke-width="0.8"/>
+  <circle cx="308" cy="177" r="4" fill="#2563EB"/>
+  <text x="320" y="181" font-size="11.5" font-weight="600" fill="#1E3A8A" font-family="'Segoe UI', Arial, sans-serif">Ticker orchestration</text>
+
+  <!-- Row 2 -->
+  <rect x="290" y="202" width="320" height="34" rx="7" fill="#DBEAFE" stroke="#93C5FD" stroke-width="0.8"/>
+  <circle cx="308" cy="219" r="4" fill="#2563EB"/>
+  <text x="320" y="223" font-size="11.5" font-weight="600" fill="#1E3A8A" font-family="'Segoe UI', Arial, sans-serif">Filing ingestion &amp; normalization</text>
+
+  <!-- Row 3 -->
+  <rect x="290" y="244" width="320" height="34" rx="7" fill="#DBEAFE" stroke="#93C5FD" stroke-width="0.8"/>
+  <circle cx="308" cy="261" r="4" fill="#2563EB"/>
+  <text x="320" y="265" font-size="11.5" font-weight="600" fill="#1E3A8A" font-family="'Segoe UI', Arial, sans-serif">Signal card generation</text>
+
+  <!-- Row 4 — replaced -->
+  <rect x="290" y="286" width="320" height="34" rx="7" fill="#DBEAFE" stroke="#93C5FD" stroke-width="0.8"/>
+  <circle cx="308" cy="303" r="4" fill="#2563EB"/>
+  <text x="320" y="307" font-size="11.5" font-weight="600" fill="#1E3A8A" font-family="'Segoe UI', Arial, sans-serif">Adversarial agentic analysis</text>
+
+  <!-- Row 5 -->
+  <rect x="290" y="328" width="320" height="34" rx="7" fill="#DBEAFE" stroke="#93C5FD" stroke-width="0.8"/>
+  <circle cx="308" cy="345" r="4" fill="#2563EB"/>
+  <text x="320" y="349" font-size="11.5" font-weight="600" fill="#1E3A8A" font-family="'Segoe UI', Arial, sans-serif">Analyst dashboard</text>
+</g>
+
+
+  <!-- tiny flow arrows between capability rows -->
+  <defs>
+    <marker id="tiny-arr" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M1 1.5L6 4L1 6.5" fill="none" stroke="#93C5FD" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <line x1="450" y1="194" x2="450" y2="200" stroke="#93C5FD" stroke-width="1.2" marker-end="url(#tiny-arr)"/>
+  <line x1="450" y1="236" x2="450" y2="242" stroke="#93C5FD" stroke-width="1.2" marker-end="url(#tiny-arr)"/>
+  <line x1="450" y1="278" x2="450" y2="284" stroke="#93C5FD" stroke-width="1.2" marker-end="url(#tiny-arr)"/>
+  <line x1="450" y1="320" x2="450" y2="326" stroke="#93C5FD" stroke-width="1.2" marker-end="url(#tiny-arr)"/>
+
+<!-- ═══ SEC EDGAR API (RIGHT) ═══ -->
+<g>
+  <rect x="722" y="200" width="152" height="130" rx="12" fill="#FFFBEB" stroke="#D97706" stroke-width="1.5" filter="url(#shadow)"/>
+  <circle cx="798" cy="246" r="24" fill="none" stroke="#D97706" stroke-width="2"/>
+  <ellipse cx="798" cy="246" rx="12" ry="24" fill="none" stroke="#D97706" stroke-width="1.2"/>
+  <line x1="774" y1="246" x2="822" y2="246" stroke="#D97706" stroke-width="1.2"/>
+  <line x1="776" y1="234" x2="820" y2="234" stroke="#D97706" stroke-width="0.8"/>
+  <line x1="776" y1="258" x2="820" y2="258" stroke="#D97706" stroke-width="0.8"/>
+  <text x="798" y="290" text-anchor="middle" font-size="12" font-weight="700" fill="#92400E" font-family="'Segoe UI', Arial, sans-serif">SEC EDGAR</text>
+  <text x="798" y="305" text-anchor="middle" font-size="11" font-weight="600" fill="#B45309" font-family="'Segoe UI', Arial, sans-serif">API</text>
+  <text x="798" y="322" text-anchor="middle" font-size="10" fill="#92400E" font-family="'Segoe UI', Arial, sans-serif">[External System]</text>
+</g>
+
+<!-- ═══ AZURE PLATFORM BOX (BOTTOM) ═══ -->
+<g>
+  <rect x="120" y="480" width="480" height="178" rx="14" fill="#F0F9FF" stroke="#0078D4" stroke-width="1.8" filter="url(#shadow)"/>
+  <g transform="translate(136, 496)">
+    <polygon points="0,30 15,0 30,30" fill="#0078D4" opacity="0.9"/>
+    <polygon points="8,30 20,8 30,30" fill="#50B0F0" opacity="0.85"/>
+    <polygon points="0,30 30,30 22,20" fill="#0050A0" opacity="0.7"/>
+  </g>
+  <text x="180" y="516" font-size="12" font-weight="700" fill="#0050A0" font-family="'Segoe UI', Arial, sans-serif">Azure Platform</text>
+  <text x="180" y="530" font-size="10" fill="#0078D4" font-family="'Segoe UI', Arial, sans-serif">[External Platform]</text>
+
+  <rect x="136" y="545" width="120" height="28" rx="6" fill="#0078D4" opacity="0.12" stroke="#0078D4" stroke-width="0.8"/>
+  <text x="148" y="563" font-size="10" font-weight="600" fill="#003A6B" font-family="'Segoe UI', Arial, sans-serif">⚡ Azure Functions</text>
+
+  <rect x="268" y="545" width="110" height="28" rx="6" fill="#0078D4" opacity="0.12" stroke="#0078D4" stroke-width="0.8"/>
+  <text x="280" y="563" font-size="10" font-weight="600" fill="#003A6B" font-family="'Segoe UI', Arial, sans-serif">📦 Blob Storage</text>
+
+  <rect x="390" y="545" width="110" height="28" rx="6" fill="#0078D4" opacity="0.12" stroke="#0078D4" stroke-width="0.8"/>
+  <text x="402" y="563" font-size="10" font-weight="600" fill="#003A6B" font-family="'Segoe UI', Arial, sans-serif">📊 Table Storage</text>
+
+  <rect x="136" y="582" width="110" height="28" rx="6" fill="#0078D4" opacity="0.12" stroke="#0078D4" stroke-width="0.8"/>
+  <text x="148" y="600" font-size="10" font-weight="600" fill="#003A6B" font-family="'Segoe UI', Arial, sans-serif">📋 Queue Storage</text>
+
+  <rect x="258" y="582" width="90" height="28" rx="6" fill="#0078D4" opacity="0.12" stroke="#0078D4" stroke-width="0.8"/>
+  <text x="270" y="600" font-size="10" font-weight="600" fill="#003A6B" font-family="'Segoe UI', Arial, sans-serif">🔑 Key Vault</text>
+
+  <rect x="360" y="582" width="100" height="28" rx="6" fill="#0078D4" opacity="0.12" stroke="#0078D4" stroke-width="0.8"/>
+  <text x="372" y="600" font-size="10" font-weight="600" fill="#003A6B" font-family="'Segoe UI', Arial, sans-serif">🤖 Azure OpenAI</text>
+
+  <rect x="136" y="619" width="140" height="28" rx="6" fill="#0078D4" opacity="0.12" stroke="#0078D4" stroke-width="0.8"/>
+  <text x="148" y="637" font-size="10" font-weight="600" fill="#003A6B" font-family="'Segoe UI', Arial, sans-serif">🪪 Managed Identity</text>
+</g>
+
+<!-- ═══ AZURE MONITOR (BOTTOM-RIGHT) ═══ -->
+<g>
+  <rect x="626" y="518" width="248" height="140" rx="14" fill="#F0FDF4" stroke="#16A34A" stroke-width="1.5" filter="url(#shadow)"/>
+  <polyline points="646,572 660,556 676,564 692,544 708,548" fill="none" stroke="#16A34A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="708" cy="548" r="4" fill="#16A34A"/>
+  <text x="750" y="554" font-size="11" font-weight="700" fill="#14532D" font-family="'Segoe UI', Arial, sans-serif">Azure Monitor</text>
+  <text x="750" y="568" font-size="10" fill="#166534" font-family="'Segoe UI', Arial, sans-serif">Application Insights</text>
+  <text x="750" y="582" font-size="10" fill="#4B5563" font-family="'Segoe UI', Arial, sans-serif">[Monitoring System]</text>
+  <rect x="642" y="594" width="220" height="22" rx="5" fill="#DCFCE7" stroke="#86EFAC" stroke-width="0.8"/>
+  <text x="752" y="609" text-anchor="middle" font-size="10" fill="#14532D" font-weight="600" font-family="'Segoe UI', Arial, sans-serif">Logs · Traces · Metrics · Alerts</text>
+  <rect x="642" y="624" width="220" height="22" rx="5" fill="#DCFCE7" stroke="#86EFAC" stroke-width="0.8"/>
+  <text x="752" y="639" text-anchor="middle" font-size="10" fill="#14532D" font-weight="600" font-family="'Segoe UI', Arial, sans-serif">Cost tracking · Availability</text>
+</g>
+
+<!-- ═══ ARROWS ═══ -->
+
+<!-- 1. Analysts ↔ Platform (bidirectional) — two offset parallel lines -->
+<!-- Forward: Analyst → Platform -->
+<line x1="180" y1="298" x2="266" y2="258" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arr-fwd)"/>
+<!-- Return: Platform → Analyst -->
+<line x1="266" y1="274" x2="180" y2="314" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arr-fwd)"/>
+<!-- Label -->
+<rect x="162" y="256" width="98" height="42" rx="5" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="0.8"/>
+<text x="211" y="270" text-anchor="middle" font-size="9" fill="#374151" font-weight="600" font-family="'Segoe UI', Arial, sans-serif">Uses dashboard,</text>
+<text x="211" y="282" text-anchor="middle" font-size="9" fill="#374151" font-family="'Segoe UI', Arial, sans-serif">starts runs, reviews</text>
+<text x="211" y="294" text-anchor="middle" font-size="9" fill="#374151" font-family="'Segoe UI', Arial, sans-serif">outputs</text>
+
+<!-- 2. Platform → SEC EDGAR (solid) -->
+<line x1="632" y1="240" x2="720" y2="255" stroke="#D97706" stroke-width="1.6" marker-end="url(#arr-fwd)"/>
+<rect x="637" y="218" width="82" height="28" rx="5" fill="#FFFBEB" stroke="#FDE68A" stroke-width="0.8"/>
+<text x="678" y="230" text-anchor="middle" font-size="9" fill="#92400E" font-weight="600" font-family="'Segoe UI', Arial, sans-serif">Fetches filings</text>
+<text x="678" y="242" text-anchor="middle" font-size="9" fill="#92400E" font-family="'Segoe UI', Arial, sans-serif">&amp; metadata</text>
+
+<!-- 3. Platform → Azure Platform (solid) -->
+<line x1="390" y1="420" x2="340" y2="478" stroke="#0078D4" stroke-width="1.6" marker-end="url(#arr-fwd)"/>
+<rect x="306" y="434" width="90" height="28" rx="5" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.8"/>
+<text x="351" y="446" text-anchor="middle" font-size="9" fill="#1E40AF" font-weight="600" font-family="'Segoe UI', Arial, sans-serif">Runs on Functions,</text>
+<text x="351" y="458" text-anchor="middle" font-size="9" fill="#1E40AF" font-family="'Segoe UI', Arial, sans-serif">stores artifacts/state</text>
+
+<!-- 4. Platform → Monitor (solid) -->
+<line x1="544" y1="400" x2="680" y2="516" stroke="#16A34A" stroke-width="1.6" marker-end="url(#arr-fwd)"/>
+<rect x="568" y="424" width="82" height="28" rx="5" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="0.8"/>
+<text x="609" y="436" text-anchor="middle" font-size="9" fill="#14532D" font-weight="600" font-family="'Segoe UI', Arial, sans-serif">Emits logs,</text>
+<text x="609" y="448" text-anchor="middle" font-size="9" fill="#14532D" font-family="'Segoe UI', Arial, sans-serif">traces, metrics</text>
+
+<!-- Footer -->
+<text x="450" y="682" text-anchor="middle" font-size="9" fill="#4A90D9" font-family="'Segoe UI', Arial, sans-serif">C4 Model · System Context · Energy/Utility Sector Analysis Platform</text>
+
+</svg>
