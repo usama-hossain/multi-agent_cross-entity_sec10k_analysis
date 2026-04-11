@@ -3,12 +3,17 @@ import os
 import sys
 import pytest
 from unittest.mock import patch
+from tests.unit._ingestion_test_helpers import import_function_app_with_service_stubs
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-import function_app
+
+
+@pytest.fixture
+def function_app():
+    return import_function_app_with_service_stubs()
 
 
 def _valid_signal_card_payload() -> dict:
@@ -175,17 +180,17 @@ class _FakeBatchServiceInProgress:
 class TestBatchReconciler:
     """Tests for signal card batch reconciler orchestration logic."""
     
-    def test_reconciler__completed_batch__materializes_results(self):
+    def test_reconciler__completed_batch__materializes_results(self, function_app):
         """Reconciler: materializes completed batch results to blob storage."""
         fake_state = _FakeStateService()
         fake_downloader = _FakeDownloader()
 
         with patch.dict(os.environ, {"SIGNAL_CARD_EXECUTION_MODE": "batch"}), patch.object(
-            function_app, "ProcessingStateService", return_value=fake_state
-        ), patch.object(function_app, "SECDownloaderService", return_value=fake_downloader), patch.object(
-            function_app, "SECSignalCardBatchService", return_value=_FakeBatchServiceCompleted()
+            function_app.shared, "ProcessingStateService", return_value=fake_state
+        ), patch.object(function_app.shared, "SECDownloaderService", return_value=fake_downloader), patch.object(
+            function_app.shared, "SECSignalCardBatchService", return_value=_FakeBatchServiceCompleted()
         ):
-            function_app.signal_card_batch_reconciler(_FakeTimer())
+            function_app.reconciler.signal_card_batch_reconciler(_FakeTimer())
 
         # Assert
         assert len(fake_downloader.uploads) == 1, (
@@ -201,17 +206,17 @@ class TestBatchReconciler:
             "Should mark signal card as extracted in state service."
         )
 
-    def test_reconciler__in_progress_batch__updates_status_without_upload(self):
+    def test_reconciler__in_progress_batch__updates_status_without_upload(self, function_app):
         """Reconciler: marks in-progress batches without uploading results."""
         fake_state = _FakeStateServiceInProgress()
         fake_downloader = _FakeDownloader()
 
         with patch.dict(os.environ, {"SIGNAL_CARD_EXECUTION_MODE": "batch"}), patch.object(
-            function_app, "ProcessingStateService", return_value=fake_state
-        ), patch.object(function_app, "SECDownloaderService", return_value=fake_downloader), patch.object(
-            function_app, "SECSignalCardBatchService", return_value=_FakeBatchServiceInProgress()
+            function_app.shared, "ProcessingStateService", return_value=fake_state
+        ), patch.object(function_app.shared, "SECDownloaderService", return_value=fake_downloader), patch.object(
+            function_app.shared, "SECSignalCardBatchService", return_value=_FakeBatchServiceInProgress()
         ):
-            function_app.signal_card_batch_reconciler(_FakeTimer())
+            function_app.reconciler.signal_card_batch_reconciler(_FakeTimer())
 
         # Assert
         assert fake_downloader.uploads == [], (

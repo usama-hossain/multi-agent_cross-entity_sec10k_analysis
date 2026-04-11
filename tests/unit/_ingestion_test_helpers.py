@@ -84,11 +84,20 @@ def import_function_app_with_service_stubs():
     sys.modules["src.services.signal_card_extractor"] = signal_mod
     sys.modules["src.services.signal_card_batch"] = signal_batch_mod
 
-    if "function_app" in sys.modules:
-        del sys.modules["function_app"]
+    # Ensure modular pipeline modules import against the stubbed services.
+    for mod_name in [
+        "src.functions.pipeline_shared",
+        "src.functions.pipeline_kickoff",
+        "src.functions.pipeline_reconciler",
+    ]:
+        if mod_name in sys.modules:
+            del sys.modules[mod_name]
 
-    imported = importlib.import_module("function_app")
+    kickoff_mod = importlib.import_module("src.functions.pipeline_kickoff")
+    reconciler_mod = importlib.import_module("src.functions.pipeline_reconciler")
+    shared_mod = kickoff_mod.shared
 
+    # Restore module table after pipeline modules are loaded against stubs.
     for name, original in original_modules.items():
         if name == "function_app":
             continue
@@ -97,7 +106,12 @@ def import_function_app_with_service_stubs():
         else:
             sys.modules[name] = original
 
-    return imported
+    class PipelineTestContext:
+        kickoff = kickoff_mod
+        reconciler = reconciler_mod
+        shared = shared_mod
+
+    return PipelineTestContext()
 
 
 class FakeRequest:

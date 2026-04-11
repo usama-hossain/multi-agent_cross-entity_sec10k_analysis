@@ -47,13 +47,13 @@ class TestTickerLoading:
                 encoding="utf-8",
             )
 
-            with patch.object(function_app, "Path") as mock_path_cls:
+            with patch.object(function_app.shared, "Path") as mock_path_cls:
                 path_instance = MagicMock()
                 path_instance.with_name.return_value = config_dir
                 mock_path_cls.return_value = path_instance
 
                 # Act
-                tickers = function_app._load_tickers()
+                tickers = function_app.shared._load_tickers()
 
         # Assert
         assert tickers == ["AEP", "CEG", "DUK"], (
@@ -74,14 +74,14 @@ class TestTickerLoading:
                 encoding="utf-8",
             )
 
-            with patch.object(function_app, "Path") as mock_path_cls:
+            with patch.object(function_app.shared, "Path") as mock_path_cls:
                 path_instance = MagicMock()
                 path_instance.with_name.return_value = config_dir
                 mock_path_cls.return_value = path_instance
 
                 # Act & Assert
                 with pytest.raises(ValueError) as exc_info:
-                    function_app._load_tickers()
+                    function_app.shared._load_tickers()
 
         assert "does not contain any valid tickers" in str(exc_info.value), (
             f"Error should indicate no valid tickers found.\n"

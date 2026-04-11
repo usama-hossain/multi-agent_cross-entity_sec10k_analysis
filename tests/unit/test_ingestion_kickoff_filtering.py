@@ -20,33 +20,36 @@ from tests.unit._ingestion_test_helpers import (
 
 
 @pytest.fixture
-def setup_function_app():
-    """Set up function app with mocked services."""
-    function_app = import_function_app_with_service_stubs()
+def setup_pipeline():
+    """Set up modular pipeline modules with mocked services."""
+    ctx = import_function_app_with_service_stubs()
     FakeQueueClient.sent_messages = []
     FakeQueueClient.from_connection_calls = []
     FakeStateService.reset()
     FakeDownloader.reset()
-    return function_app
+    return ctx
 
 
 @pytest.mark.unit
 class TestKickoffFiltering:
     """Tests for kickoff validation and ticker-filter behavior."""
 
-    def test_kickoff__missing_storage_config__returns_500(self, setup_function_app):
+    def test_kickoff__missing_storage_config__returns_500(self, setup_pipeline):
         """Verify kickoff returns 500 error when storage connection not configured."""
         # Arrange
-        function_app = setup_function_app
+        ctx = setup_pipeline
         
         # Act
-        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
-             patch.object(function_app, "ProcessingStateService", FakeStateService), \
-             patch.object(function_app, "QueueClient", FakeQueueClient), \
-             patch.object(function_app, "_load_tickers", return_value=["AEP"]), \
-             patch.object(function_app.os, "getenv",
-                        side_effect=lambda key, default=None: None if key == "AzureWebJobsStorage" else default):
-            response = function_app.manual_kickoff(FakeRequest())
+        with patch.object(ctx.shared, "SECDownloaderService", FakeDownloader), \
+             patch.object(ctx.shared, "ProcessingStateService", FakeStateService), \
+             patch.object(ctx.shared, "QueueClient", FakeQueueClient), \
+             patch.object(ctx.shared, "_load_tickers", return_value=["AEP"]), \
+             patch.object(
+                 ctx.kickoff.os,
+                 "getenv",
+                 side_effect=lambda key, default=None: None if key == "AzureWebJobsStorage" else default,
+             ):
+            response = ctx.kickoff.manual_kickoff(FakeRequest())
             body = json.loads(response.get_body().decode("utf-8"))
 
         # Assert
@@ -64,18 +67,18 @@ class TestKickoffFiltering:
             f"Got calls: {FakeQueueClient.from_connection_calls}"
         )
 
-    def test_kickoff__all_invalid_tickers__returns_400(self, setup_function_app):
+    def test_kickoff__all_invalid_tickers__returns_400(self, setup_pipeline):
         """Verify kickoff returns 400 when all filtered tickers are invalid."""
         # Arrange
-        function_app = setup_function_app
-        
+        ctx = setup_pipeline
+
         # Act
-        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
-             patch.object(function_app, "ProcessingStateService", FakeStateService), \
-             patch.object(function_app, "QueueClient", FakeQueueClient), \
-             patch.object(function_app, "_load_tickers", return_value=["AEP", "CEG"]), \
-             patch.object(function_app.os, "getenv", side_effect=default_getenv):
-            response = function_app.manual_kickoff(FakeRequest({"tickers": "XYZ,ABC"}))
+        with patch.object(ctx.shared, "SECDownloaderService", FakeDownloader), \
+             patch.object(ctx.shared, "ProcessingStateService", FakeStateService), \
+             patch.object(ctx.shared, "QueueClient", FakeQueueClient), \
+             patch.object(ctx.shared, "_load_tickers", return_value=["AEP", "CEG"]), \
+             patch.object(ctx.kickoff.os, "getenv", side_effect=default_getenv):
+            response = ctx.kickoff.manual_kickoff(FakeRequest({"tickers": "XYZ,ABC"}))
             body = json.loads(response.get_body().decode("utf-8"))
 
         # Assert
@@ -94,19 +97,19 @@ class TestKickoffFiltering:
             f"Got calls: {FakeDownloader.fetch_calls}"
         )
 
-    def test_kickoff__mixed_valid_invalid_tickers__filters_to_valid(self, setup_function_app):
+    def test_kickoff__mixed_valid_invalid_tickers__filters_to_valid(self, setup_pipeline):
         """Verify kickoff filters to valid subset when mix of valid and invalid tickers provided."""
         # Arrange
-        function_app = setup_function_app
+        ctx = setup_pipeline
         FakeDownloader.filings_by_ticker = {"AEP": []}
 
         # Act
-        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
-             patch.object(function_app, "ProcessingStateService", FakeStateService), \
-             patch.object(function_app, "QueueClient", FakeQueueClient), \
-             patch.object(function_app, "_load_tickers", return_value=["AEP", "CEG"]), \
-             patch.object(function_app.os, "getenv", side_effect=default_getenv):
-            response = function_app.manual_kickoff(FakeRequest({"tickers": "AEP,ZZZ"}))
+        with patch.object(ctx.shared, "SECDownloaderService", FakeDownloader), \
+             patch.object(ctx.shared, "ProcessingStateService", FakeStateService), \
+             patch.object(ctx.shared, "QueueClient", FakeQueueClient), \
+             patch.object(ctx.shared, "_load_tickers", return_value=["AEP", "CEG"]), \
+             patch.object(ctx.kickoff.os, "getenv", side_effect=default_getenv):
+            response = ctx.kickoff.manual_kickoff(FakeRequest({"tickers": "AEP,ZZZ"}))
 
         # Assert
         assert response.status_code == 200, (

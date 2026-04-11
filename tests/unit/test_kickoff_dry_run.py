@@ -1,105 +1,14 @@
-import importlib
 import json
 import os
 import sys
-import types
 import pytest
 from unittest.mock import patch
+from tests.unit._ingestion_test_helpers import import_function_app_with_service_stubs
 
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
-
-
-def _import_function_app_with_service_stubs():
-    original_modules = {
-        name: sys.modules.get(name)
-        for name in [
-            "azure.storage",
-            "azure.storage.queue",
-            "src.services.processing_state",
-            "src.services.sec_downloader",
-            "src.services.sec_edgar_markdown",
-            "src.services.sec_edgar_sections",
-            "src.services.signal_card_extractor",
-            "src.services.signal_card_batch",
-            "function_app",
-        ]
-    }
-
-    azure_storage_mod = types.ModuleType("azure.storage")
-    azure_queue_mod = types.ModuleType("azure.storage.queue")
-
-    class DummyQueueClient:
-        @classmethod
-        def from_connection_string(cls, _connection_string, _queue_name):
-            return cls()
-
-        def create_queue(self):
-            return None
-
-        def send_message(self, _msg):
-            return None
-
-    azure_queue_mod.QueueClient = DummyQueueClient
-    sys.modules["azure.storage"] = azure_storage_mod
-    sys.modules["azure.storage.queue"] = azure_queue_mod
-
-    state_mod = types.ModuleType("src.services.processing_state")
-    downloader_mod = types.ModuleType("src.services.sec_downloader")
-
-    class DummyProcessingStateService:
-        pass
-
-    class DummySECDownloaderService:
-        pass
-
-    state_mod.ProcessingStateService = DummyProcessingStateService
-    downloader_mod.SECDownloaderService = DummySECDownloaderService
-    sys.modules["src.services.processing_state"] = state_mod
-    sys.modules["src.services.sec_downloader"] = downloader_mod
-
-    sec_md_mod = types.ModuleType("src.services.sec_edgar_markdown")
-    sec_sections_mod = types.ModuleType("src.services.sec_edgar_sections")
-    signal_mod = types.ModuleType("src.services.signal_card_extractor")
-    signal_batch_mod = types.ModuleType("src.services.signal_card_batch")
-
-    class DummySECEdgarMarkdownService:
-        pass
-
-    class DummySECSignalCardService:
-        pass
-
-    class DummySECEdgarSectionsService:
-        pass
-
-    class DummySECSignalCardBatchService:
-        pass
-
-    sec_md_mod.SECEdgarMarkdownService = DummySECEdgarMarkdownService
-    sec_sections_mod.SECEdgarSectionsService = DummySECEdgarSectionsService
-    signal_mod.SECSignalCardService = DummySECSignalCardService
-    signal_batch_mod.SECSignalCardBatchService = DummySECSignalCardBatchService
-    sys.modules["src.services.sec_edgar_markdown"] = sec_md_mod
-    sys.modules["src.services.sec_edgar_sections"] = sec_sections_mod
-    sys.modules["src.services.signal_card_extractor"] = signal_mod
-    sys.modules["src.services.signal_card_batch"] = signal_batch_mod
-
-    if "function_app" in sys.modules:
-        del sys.modules["function_app"]
-
-    imported = importlib.import_module("function_app")
-
-    for name, original in original_modules.items():
-        if name == "function_app":
-            continue
-        if original is None:
-            sys.modules.pop(name, None)
-        else:
-            sys.modules[name] = original
-
-    return imported
 
 
 class FakeRequest:
@@ -180,33 +89,39 @@ class FakeDownloader:
 
 
 @pytest.fixture
-def setup_function_app():
-    """Set up function app with fake services."""
+def setup_pipeline():
+    """Set up modular pipeline modules with fake services."""
     FakeQueueClient.sent = {"sec-convert-jobs": []}
     FakeStateService.upserts = []
     FakeDownloader.downloads = []
     FakeDownloader.uploads = []
-    return _import_function_app_with_service_stubs()
+    return import_function_app_with_service_stubs()
 
 
 @pytest.mark.unit
 class TestKickoffDryRun:
     """Tests for kickoff routing by ledger state."""
 
-    def test_kickoff__routes_by_state__without_real_services(self, setup_function_app):
+    def test_kickoff__routes_by_state__without_real_services(self, setup_pipeline):
         """Verify kickoff routes correctly by state without real services."""
         # Arrange
-        function_app = setup_function_app
+        ctx = setup_pipeline
 
         # Act
-        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
-             patch.object(function_app, "ProcessingStateService", FakeStateService), \
-             patch.object(function_app, "QueueClient", FakeQueueClient), \
-             patch.object(function_app, "_load_tickers",
-                        return_value=["AEP", "CEG", "DUK", "NEE", "SO"]), \
-             patch.object(function_app.os, "getenv",
-                        side_effect=lambda key, default=None: "fake-conn" if key == "AzureWebJobsStorage" else default):
-            response = function_app.manual_kickoff(FakeRequest())
+        with patch.object(ctx.shared, "SECDownloaderService", FakeDownloader), \
+             patch.object(ctx.shared, "ProcessingStateService", FakeStateService), \
+             patch.object(ctx.shared, "QueueClient", FakeQueueClient), \
+             patch.object(
+                 ctx.shared,
+                 "_load_tickers",
+                 return_value=["AEP", "CEG", "DUK", "NEE", "SO"],
+             ), \
+             patch.object(
+                 ctx.kickoff.os,
+                 "getenv",
+                 side_effect=lambda key, default=None: "fake-conn" if key == "AzureWebJobsStorage" else default,
+             ):
+            response = ctx.kickoff.manual_kickoff(FakeRequest())
             body = json.loads(response.get_body().decode("utf-8"))
 
         # Assert

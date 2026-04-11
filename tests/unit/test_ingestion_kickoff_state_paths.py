@@ -21,24 +21,24 @@ from tests.unit._ingestion_test_helpers import (
 
 
 @pytest.fixture
-def setup_function_app():
-    """Set up function app with mocked services."""
-    function_app = import_function_app_with_service_stubs()
+def setup_pipeline():
+    """Set up modular pipeline modules with mocked services."""
+    ctx = import_function_app_with_service_stubs()
     FakeQueueClient.sent_messages = []
     FakeQueueClient.from_connection_calls = []
     FakeStateService.reset()
     FakeDownloader.reset()
-    return function_app
+    return ctx
 
 
 @pytest.mark.unit
 class TestKickoffStatePaths:
     """Tests for kickoff state/artifact branch behavior."""
 
-    def test_kickoff__all_artifacts_exist__skips_processing(self, setup_function_app):
+    def test_kickoff__all_artifacts_exist__skips_processing(self, setup_pipeline):
         """Verify kickoff skips when all artifacts exist and not forced."""
         # Arrange
-        function_app = setup_function_app
+        ctx = setup_pipeline
         filing = single_filing("AEP", "ACC-ALL")
         FakeDownloader.filings_by_ticker = {"AEP": [filing]}
         FakeDownloader.existing_blobs = {
@@ -49,12 +49,12 @@ class TestKickoffStatePaths:
         }
 
         # Act
-        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
-             patch.object(function_app, "ProcessingStateService", FakeStateService), \
-             patch.object(function_app, "QueueClient", FakeQueueClient), \
-             patch.object(function_app, "_load_tickers", return_value=["AEP"]), \
-             patch.object(function_app.os, "getenv", side_effect=default_getenv):
-            response = function_app.manual_kickoff(FakeRequest())
+        with patch.object(ctx.shared, "SECDownloaderService", FakeDownloader), \
+             patch.object(ctx.shared, "ProcessingStateService", FakeStateService), \
+             patch.object(ctx.shared, "QueueClient", FakeQueueClient), \
+             patch.object(ctx.shared, "_load_tickers", return_value=["AEP"]), \
+             patch.object(ctx.kickoff.os, "getenv", side_effect=default_getenv):
+            response = ctx.kickoff.manual_kickoff(FakeRequest())
             body = json.loads(response.get_body().decode("utf-8"))
 
         # Assert
@@ -69,21 +69,21 @@ class TestKickoffStatePaths:
         assert FakeDownloader.upload_calls == []
         assert FakeQueueClient.sent_messages == []
 
-    def test_kickoff__error_status__skips_accession(self, setup_function_app):
+    def test_kickoff__error_status__skips_accession(self, setup_pipeline):
         """Verify kickoff skips accession when status is error."""
         # Arrange
-        function_app = setup_function_app
+        ctx = setup_pipeline
         filing = single_filing("AEP", "ACC-ERR")
         FakeDownloader.filings_by_ticker = {"AEP": [filing]}
         FakeStateService.statuses = {"ACC-ERR": "error"}
 
         # Act
-        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
-             patch.object(function_app, "ProcessingStateService", FakeStateService), \
-             patch.object(function_app, "QueueClient", FakeQueueClient), \
-             patch.object(function_app, "_load_tickers", return_value=["AEP"]), \
-             patch.object(function_app.os, "getenv", side_effect=default_getenv):
-            response = function_app.manual_kickoff(FakeRequest())
+        with patch.object(ctx.shared, "SECDownloaderService", FakeDownloader), \
+             patch.object(ctx.shared, "ProcessingStateService", FakeStateService), \
+             patch.object(ctx.shared, "QueueClient", FakeQueueClient), \
+             patch.object(ctx.shared, "_load_tickers", return_value=["AEP"]), \
+             patch.object(ctx.kickoff.os, "getenv", side_effect=default_getenv):
+            response = ctx.kickoff.manual_kickoff(FakeRequest())
             body = json.loads(response.get_body().decode("utf-8"))
 
         # Assert
@@ -96,21 +96,21 @@ class TestKickoffStatePaths:
         assert FakeDownloader.download_calls == []
         assert FakeQueueClient.sent_messages == []
 
-    def test_kickoff__ready_status__enqueues_existing(self, setup_function_app):
+    def test_kickoff__ready_status__enqueues_existing(self, setup_pipeline):
         """Verify kickoff enqueues existing filing when status is ready."""
         # Arrange
-        function_app = setup_function_app
+        ctx = setup_pipeline
         filing = single_filing("AEP", "ACC-READY")
         FakeDownloader.filings_by_ticker = {"AEP": [filing]}
         FakeStateService.statuses = {"ACC-READY": "ready"}
 
         # Act
-        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
-             patch.object(function_app, "ProcessingStateService", FakeStateService), \
-             patch.object(function_app, "QueueClient", FakeQueueClient), \
-             patch.object(function_app, "_load_tickers", return_value=["AEP"]), \
-             patch.object(function_app.os, "getenv", side_effect=default_getenv):
-            response = function_app.manual_kickoff(FakeRequest())
+        with patch.object(ctx.shared, "SECDownloaderService", FakeDownloader), \
+             patch.object(ctx.shared, "ProcessingStateService", FakeStateService), \
+             patch.object(ctx.shared, "QueueClient", FakeQueueClient), \
+             patch.object(ctx.shared, "_load_tickers", return_value=["AEP"]), \
+             patch.object(ctx.kickoff.os, "getenv", side_effect=default_getenv):
+            response = ctx.kickoff.manual_kickoff(FakeRequest())
             body = json.loads(response.get_body().decode("utf-8"))
 
         # Assert
@@ -127,20 +127,20 @@ class TestKickoffStatePaths:
         assert queued["attempt"] == 1
         assert FakeDownloader.download_calls == []
 
-    def test_kickoff__new_accession__downloads_uploads_and_upserts(self, setup_function_app):
+    def test_kickoff__new_accession__downloads_uploads_and_upserts(self, setup_pipeline):
         """Verify kickoff downloads, uploads, and upserts for new accession."""
         # Arrange
-        function_app = setup_function_app
+        ctx = setup_pipeline
         filing = single_filing("AEP", "ACC-NEW")
         FakeDownloader.filings_by_ticker = {"AEP": [filing]}
 
         # Act
-        with patch.object(function_app, "SECDownloaderService", FakeDownloader), \
-             patch.object(function_app, "ProcessingStateService", FakeStateService), \
-             patch.object(function_app, "QueueClient", FakeQueueClient), \
-             patch.object(function_app, "_load_tickers", return_value=["AEP"]), \
-             patch.object(function_app.os, "getenv", side_effect=default_getenv):
-            response = function_app.manual_kickoff(FakeRequest())
+        with patch.object(ctx.shared, "SECDownloaderService", FakeDownloader), \
+             patch.object(ctx.shared, "ProcessingStateService", FakeStateService), \
+             patch.object(ctx.shared, "QueueClient", FakeQueueClient), \
+             patch.object(ctx.shared, "_load_tickers", return_value=["AEP"]), \
+             patch.object(ctx.kickoff.os, "getenv", side_effect=default_getenv):
+            response = ctx.kickoff.manual_kickoff(FakeRequest())
             body = json.loads(response.get_body().decode("utf-8"))
 
         # Assert
