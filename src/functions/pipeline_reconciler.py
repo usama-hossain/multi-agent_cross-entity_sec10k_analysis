@@ -7,9 +7,14 @@ import azure.functions as func
 from src.core.blob_paths import BlobPaths
 from src.core.ports import PendingSignalCardBatch
 from src.functions import pipeline_shared as shared
+from src.services.signal_cards.ticker_insight_orchestrator import TickerInsightOrchestrator
 
 
 reconciler_bp = func.Blueprint()
+
+
+def _is_ticker_insight_auto_enabled() -> bool:
+    return os.getenv("TICKER_INSIGHT_AUTO_GENERATE", "true").strip().lower() in {"1", "true", "yes", "on"}
 
 
 @reconciler_bp.function_name(name="signal_card_batch_reconciler")
@@ -263,6 +268,26 @@ def signal_card_batch_reconciler(timer: func.TimerRequest) -> None:
                         error_message="Artifact upload failed after batch completion",
                     )
                     reconciliation_stats["results_failed"] += 1
+
+            batch_ticker = shared._resolve_ticker_for_batch_entity(batch_entities[0]) if batch_entities else None
+            if _is_ticker_insight_auto_enabled() and batch_ticker:
+                try:
+                    insight_result = TickerInsightOrchestrator(
+                        blob_store=blob_store,
+                        processing_state=state_service,
+                    ).generate_and_store_for_ticker(batch_ticker)
+                    logging.info(
+                        "Ticker insight auto-generation completed in reconciler: ticker=%s status=%s blob=%s",
+                        batch_ticker,
+                        insight_result.get("status"),
+                        insight_result.get("blob_name"),
+                    )
+                except Exception:
+                    logging.exception(
+                        "Ticker insight auto-generation failed in reconciler: ticker=%s batch_id=%s",
+                        batch_ticker,
+                        batch_id,
+                    )
             continue
 
         if batch_status in {"failed", "expired", "cancelled"}:

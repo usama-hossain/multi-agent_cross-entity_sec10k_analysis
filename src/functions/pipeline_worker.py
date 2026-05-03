@@ -6,9 +6,14 @@ import azure.functions as func
 
 from src.core.blob_paths import BlobPaths
 from src.functions import pipeline_shared as shared
+from src.services.signal_cards.ticker_insight_orchestrator import TickerInsightOrchestrator
 
 
 worker_bp = func.Blueprint()
+
+
+def _is_ticker_insight_auto_enabled() -> bool:
+    return os.getenv("TICKER_INSIGHT_AUTO_GENERATE", "true").strip().lower() in {"1", "true", "yes", "on"}
 
 
 @worker_bp.function_name(name="sec_markdown_worker")
@@ -53,6 +58,45 @@ def sec_markdown_worker(msg: func.QueueMessage) -> None:
             state_service.set_item1a_status(accession, "extracted")
             state_service.set_item7_status(accession, "extracted")
             state_service.set_signal_card_status(accession, "extracted")
+
+            if _is_ticker_insight_auto_enabled():
+                insight_blob = BlobPaths.ticker_insight(ticker)
+                entity = state_service.get_entity(accession) or {}
+                ticker_insight_status = str(entity.get("TickerInsightStatus", "")).strip().lower()
+                insight_exists = blob_store.blob_exists(insight_blob)
+                should_generate_insight = (not insight_exists) or ticker_insight_status not in {"completed", "empty"}
+
+                if should_generate_insight:
+                    context_entries = ticker_filing_context or [{"accession": accession, "fiscal_year": fiscal_year}]
+                    sorted_entries = sorted(
+                        [e for e in context_entries if str(e.get("accession", "")).strip()],
+                        key=lambda e: (
+                            -(shared._safe_int(e.get("fiscal_year")) or -1),
+                            str(e.get("accession", "")),
+                        ),
+                    )
+                    coordinator_accession = (
+                        str(sorted_entries[0].get("accession", "")).strip() if sorted_entries else accession
+                    )
+
+                    if accession == coordinator_accession:
+                        try:
+                            insight_result = TickerInsightOrchestrator(
+                                blob_store=blob_store,
+                                processing_state=state_service,
+                            ).generate_and_store_for_ticker(ticker)
+                            logging.info(
+                                "Ticker insight generated from existing artifacts: ticker=%s status=%s blob=%s",
+                                ticker,
+                                insight_result.get("status"),
+                                insight_result.get("blob_name"),
+                            )
+                        except Exception:
+                            logging.exception(
+                                "Ticker insight generation failed from existing artifacts: ticker=%s accession=%s",
+                                ticker,
+                                accession,
+                            )
             return
 
         if current_status == "error":
@@ -263,6 +307,25 @@ def sec_markdown_worker(msg: func.QueueMessage) -> None:
                                     entry_accession,
                                     entry_signal_card_blob,
                                 )
+
+                            if _is_ticker_insight_auto_enabled():
+                                try:
+                                    insight_result = TickerInsightOrchestrator(
+                                        blob_store=blob_store,
+                                        processing_state=state_service,
+                                    ).generate_and_store_for_ticker(ticker)
+                                    logging.info(
+                                        "Ticker insight auto-generation completed in worker: ticker=%s status=%s blob=%s",
+                                        ticker,
+                                        insight_result.get("status"),
+                                        insight_result.get("blob_name"),
+                                    )
+                                except Exception:
+                                    logging.exception(
+                                        "Ticker insight auto-generation failed in worker: ticker=%s coordinator_accession=%s",
+                                        ticker,
+                                        coordinator_accession,
+                                    )
                         else:
                             logging.info(
                                 "Signal card extraction is disabled for ticker=%s accession=%s",

@@ -18,3 +18,7 @@ class BlobPaths:
     @staticmethod
     def signal_card(ticker: str, accession: str) -> str:
         return f"processed/signals/{ticker}/{accession}/signal_card.json"
+
+    @staticmethod
+    def ticker_insight(ticker: str) -> str:
+        return f"processed/insights/{ticker}/ticker_insight.json"

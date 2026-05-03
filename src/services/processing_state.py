@@ -21,6 +21,7 @@ MARKDOWN_STATUSES = {"not_started", "ready", "pdf_converted", "markdown_converte
 SECTION_STATUSES = {"not_started", "extracted", "missing", "error"}
 SIGNAL_CARD_STATUSES = {"not_started", "extracted", "skipped", "error", "queued_for_batch", "batch_submitted", "batch_completed", "batch_failed"}
 BATCH_STATUSES = {"queued", "in_progress", "completed", "failed", "expired"}
+TICKER_INSIGHT_STATUSES = {"not_started", "in_progress", "completed", "empty", "error"}
 
 
 class ProcessingStateService:
@@ -220,6 +221,57 @@ class ProcessingStateService:
             "SignalCardBatchStatus": normalized_status,
             "LastUpdatedUtc": datetime.datetime.utcnow().isoformat(),
         }
+
+        self.table_client.upsert_entity(entity)
+
+    def set_ticker_insight_status(self, accession: str, status: str, error_message: Optional[str] = None) -> None:
+        """Track ticker-level insight generation status on accession rows."""
+        normalized_status = status.strip().lower()
+        if normalized_status not in TICKER_INSIGHT_STATUSES:
+            raise ValueError(f"Unsupported ticker insight status: {status}")
+
+        entity: Dict[str, Any] = {
+            "PartitionKey": self.partition_key,
+            "RowKey": accession,
+            "TickerInsightStatus": normalized_status,
+            "LastUpdatedUtc": datetime.datetime.utcnow().isoformat(),
+        }
+
+        if error_message:
+            entity["TickerInsightError"] = error_message[:2000]
+
+        self.table_client.upsert_entity(entity)
+
+    def set_ticker_insight_metadata(
+        self,
+        accession: str,
+        insight_blob_path: str,
+        generated_at_utc: str,
+    ) -> None:
+        """Store insight artifact metadata for traceability on accession rows."""
+        entity: Dict[str, Any] = {
+            "PartitionKey": self.partition_key,
+            "RowKey": accession,
+            "TickerInsightBlob": insight_blob_path,
+            "TickerInsightGeneratedUtc": generated_at_utc,
+            "LastUpdatedUtc": datetime.datetime.utcnow().isoformat(),
+        }
+
+        self.table_client.upsert_entity(entity)
+
+    def reset_ticker_insight_state(self, accession: str, clear_metadata: bool = True) -> None:
+        """Reset only ticker-insight lifecycle fields for an accession."""
+        entity: Dict[str, Any] = {
+            "PartitionKey": self.partition_key,
+            "RowKey": accession,
+            "TickerInsightStatus": "not_started",
+            "TickerInsightError": "",
+            "LastUpdatedUtc": datetime.datetime.utcnow().isoformat(),
+        }
+
+        if clear_metadata:
+            entity["TickerInsightBlob"] = ""
+            entity["TickerInsightGeneratedUtc"] = ""
 
         self.table_client.upsert_entity(entity)
 

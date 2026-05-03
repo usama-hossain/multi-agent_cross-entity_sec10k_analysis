@@ -94,6 +94,14 @@ def manual_kickoff(req: func.HttpRequest) -> func.HttpResponse:
                     item7_blob = BlobPaths.item7(ticker, accession)
                     signal_card_blob = BlobPaths.signal_card(ticker, accession)
                     status = state_store.get_status(accession)
+                    insight_blob = BlobPaths.ticker_insight(ticker)
+
+                    insight_exists = blob_store.blob_exists(insight_blob)
+                    entity = state_store.get_entity(accession) or {}
+                    ticker_insight_status = str(entity.get("TickerInsightStatus", "")).strip().lower()
+                    insight_complete = insight_exists and ticker_insight_status in {"completed", "empty"}
+                    if not insight_complete:
+                        state_store.set_ticker_insight_status(accession, "not_started")
 
                     markdown_exists = blob_store.blob_exists(markdown_blob)
                     item1a_exists = blob_store.blob_exists(item1a_blob)
@@ -110,14 +118,14 @@ def manual_kickoff(req: func.HttpRequest) -> func.HttpResponse:
                         state_store.set_signal_card_status(accession, "extracted")
 
                     skip_reason = None
-                    if markdown_exists and item1a_exists and item7_exists and signal_card_exists:
+                    if markdown_exists and item1a_exists and item7_exists and signal_card_exists and insight_complete:
                         if not force_reprocess_signal_cards:
                             skip_reason = "already_complete"
 
                     if skip_reason:
                         skipped += 1
                         logging.info(
-                            "Skipping ticker=%s accession=%s because markdown, item sections, and signal card already exist",
+                            "Skipping ticker=%s accession=%s because filing artifacts and ticker insight are complete",
                             ticker,
                             accession,
                         )
@@ -130,21 +138,37 @@ def manual_kickoff(req: func.HttpRequest) -> func.HttpResponse:
                         )
                         continue
 
-                    if status == "error":
-                        skipped += 1
+                    if markdown_exists and item1a_exists and item7_exists and signal_card_exists and not insight_complete:
                         logging.info(
-                            "Skipping ticker=%s accession=%s because filing status is error",
+                            "Final insight missing for ticker=%s accession=%s; enqueueing for final-leg generation",
                             ticker,
                             accession,
                         )
-                        not_downloaded.append(
-                            {
-                                "ticker": ticker,
-                                "accession": accession,
-                                "reason": "status_error",
-                            }
-                        )
-                        continue
+
+                    if status == "error":
+                        if force_reprocess_signal_cards:
+                            logging.info(
+                                "Force retry enabled: reprocessing ticker=%s accession=%s despite filing status=error",
+                                ticker,
+                                accession,
+                            )
+                            state_store.update_status(accession, "ready")
+                            status = "ready"
+                        else:
+                            skipped += 1
+                            logging.info(
+                                "Skipping ticker=%s accession=%s because filing status is error",
+                                ticker,
+                                accession,
+                            )
+                            not_downloaded.append(
+                                {
+                                    "ticker": ticker,
+                                    "accession": accession,
+                                    "reason": "status_error",
+                                }
+                            )
+                            continue
 
                     if status in ("ready", "pdf_converted", "markdown_converted") or markdown_exists:
                         message = shared._build_kickoff_queue_message(
