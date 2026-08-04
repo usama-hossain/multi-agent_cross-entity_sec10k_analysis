@@ -66,12 +66,6 @@ Deployed on **Azure Web App** — Signal Card timeline view, live analysis runne
 
 ---
 
-## Technical Architecture
-
-
-
----
-
 ## Technology Stack
 
 | Category | Technologies |
@@ -83,25 +77,6 @@ Deployed on **Azure Web App** — Signal Card timeline view, live analysis runne
 | **Dashboard** | Streamlit |
 | **Language** | Python |
 | **Version Control** | Git, Azure DevOps Repos |
-
----
-
-## Future Roadmap
-
-### Knowledge Graph Layer
-Persist cross-entity relationships in **Azure Cosmos DB (Gremlin API)** to enable graph-based queries across fiscal years — e.g., *"which entities share supply chain exposure with Vistra and showed the same backlog signal pattern?"*
-
-### Backtesting Framework
-Correlate historical Signal Card outputs against subsequent price action and earnings revisions to quantify the predictive value of narrative divergence signals over defined time horizons.
-
-### Expanded Sector Coverage
-Extend the Signal Card schema beyond energy/utilities to adjacent sectors — industrials, data center REITs, and semiconductor capital equipment — where supply chain narrative divergence plays a similar informational role.
-
-### Automated Divergence Alerts
-Real-time ingestion of newly published 10-K/10-Q filings with automated cross-entity divergence scoring, triggering alerts when a company's risk narrative breaks from sector consensus beyond a calibrated threshold.
-
-### Research Publication
-Formalize the narrative divergence detection methodology as a peer-reviewed paper, contributing the evaluation framework and ablation results to the financial NLP literature.
 
 ---
 
